@@ -1,0 +1,77 @@
+import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { Dog, Calendar, MessageCircle, Heart, Navigation, User } from 'lucide-react'
+
+const BottomNavigation: React.FC = () => {
+  const location = useLocation()
+
+  const navItems = [
+    {
+      path: '/',
+      icon: Dog,
+      label: 'Match',
+      color: 'text-primary-600'
+    },
+    {
+      path: '/events',
+      icon: Calendar,
+      label: 'Events',
+      color: 'text-gray-600'
+    },
+    {
+      path: '/community',
+      icon: MessageCircle,
+      label: 'Community',
+      color: 'text-gray-600'
+    },
+    {
+      path: '/health',
+      icon: Heart,
+      label: 'Health',
+      color: 'text-gray-600'
+    },
+    {
+      path: '/gps-tracking',
+      icon: Navigation,
+      label: 'GPS',
+      color: 'text-gray-600'
+    },
+    {
+      path: '/profile',
+      icon: User,
+      label: 'Profile',
+      color: 'text-gray-600'
+    }
+  ]
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-earth-200 shadow-lg z-50">
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center justify-around py-2">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive = location.pathname === item.path
+            const activeColor = isActive ? 'text-teal-600' : 'text-earth-600'
+            
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 ${
+                  isActive ? 'bg-teal-50' : 'hover:bg-earth-50'
+                }`}
+              >
+                <Icon className={`w-6 h-6 mb-1 ${activeColor}`} />
+                <span className={`text-xs font-medium ${activeColor} font-body`}>
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </nav>
+  )
+}
+
+export default BottomNavigation
