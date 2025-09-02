@@ -1,15 +1,20 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Camera, Edit3, Settings, Heart, MapPin, Calendar, Phone, Mail, Shield, LogOut, X } from 'lucide-react'
+import { User, Camera, Edit3, Settings, Heart, MapPin, Calendar, Phone, Mail, Shield, LogOut, X, RotateCcw, CheckCircle } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { useProfile } from '../contexts/ProfileContext'
+import { useOnboarding } from '../hooks/useOnboarding'
+import OnboardingDataViewer from '../components/OnboardingDataViewer'
 
 const ProfilePage: React.FC = () => {
   const { profile, updateProfile, updateAvatar, updateDogPhoto, updatePreferences, signOut } = useProfile()
+  const { onboardingData, resetOnboarding } = useOnboarding()
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPhotos, setIsChangingPhotos] = useState(false)
   const [isChangingPreferences, setIsChangingPreferences] = useState(false)
   const [isChangingPrivacy, setIsChangingPrivacy] = useState(false)
+  const [showResetOnboarding, setShowResetOnboarding] = useState(false)
+  const [showOnboardingData, setShowOnboardingData] = useState(false)
   const [editForm, setEditForm] = useState({
     name: profile.name,
     email: profile.email,
@@ -32,6 +37,20 @@ const ProfilePage: React.FC = () => {
       dogBio: profile.dogBio
     })
   }, [profile])
+
+  // Pre-populate profile with onboarding data if available
+  React.useEffect(() => {
+    if (onboardingData.isCompleted && onboardingData.fullName) {
+      updateProfile({
+        name: onboardingData.fullName,
+        email: onboardingData.email,
+        phone: onboardingData.phone,
+        dogName: onboardingData.dogName,
+        dogBreed: onboardingData.breed,
+        dogBio: `A ${onboardingData.age} year old ${onboardingData.size} ${onboardingData.breed} who loves adventures! 🐾`
+      })
+    }
+  }, [onboardingData, updateProfile])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const stats = [
@@ -103,6 +122,8 @@ const ProfilePage: React.FC = () => {
     { icon: Camera, label: 'Change Photos', action: () => setIsChangingPhotos(true) },
     { icon: Settings, label: 'Preferences', action: () => setIsChangingPreferences(true) },
     { icon: Shield, label: 'Privacy', action: () => setIsChangingPrivacy(true) },
+    { icon: RotateCcw, label: 'Reset Onboarding', action: () => setShowResetOnboarding(true) },
+    { icon: CheckCircle, label: 'View Onboarding Data', action: () => setShowOnboardingData(true) },
     { icon: LogOut, label: 'Sign Out', action: handleSignOut }
   ]
 
@@ -581,6 +602,65 @@ const ProfilePage: React.FC = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reset Onboarding Modal */}
+      <AnimatePresence>
+        {showResetOnboarding && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowResetOnboarding(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-earth-200 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-display font-bold text-earth-900">Reset Onboarding</h2>
+                <button
+                  onClick={() => setShowResetOnboarding(false)}
+                  className="p-2 hover:bg-earth-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-earth-600" />
+                </button>
+              </div>
+              
+              <p className="text-earth-700 font-body mb-4">
+                Are you sure you want to reset your onboarding data? This will remove all the information you entered during the onboarding process.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowResetOnboarding(false)}
+                  className="flex-1 bg-earth-200 hover:bg-earth-300 text-earth-800 py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={resetOnboarding}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                >
+                  Reset Onboarding
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Onboarding Data Viewer */}
+      <AnimatePresence>
+        {showOnboardingData && (
+          <OnboardingDataViewer
+            data={onboardingData}
+            onClose={() => setShowOnboardingData(false)}
+          />
         )}
       </AnimatePresence>
     </div>

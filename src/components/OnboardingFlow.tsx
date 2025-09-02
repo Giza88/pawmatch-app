@@ -1,31 +1,34 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Camera, User, Dog, Cake, Ruler } from 'lucide-react'
+import { ArrowLeft, Camera, User, Dog, Cake, Ruler, Bell, MapPin, Shield, CheckCircle } from 'lucide-react'
+import { useOnboarding } from '../hooks/useOnboarding'
 
 interface OnboardingFlowProps {
   onComplete: () => void
 }
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
+  const { onboardingData, updateOnboardingData, completeOnboarding } = useOnboarding()
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    dogName: '',
-    breed: '',
-    age: 1,
-    size: 'Medium' as 'Small' | 'Medium' | 'Large' | 'Extra Large'
-  })
 
   const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    updateOnboardingData({ [field]: value })
+  }
+
+  const handlePreferenceChange = (key: string, value: any) => {
+    updateOnboardingData({
+      preferences: {
+        ...onboardingData.preferences,
+        [key]: value
+      }
+    })
   }
 
   const nextStep = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     } else {
+      completeOnboarding()
       onComplete()
     }
   }
@@ -56,7 +59,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              value={formData.fullName}
+              value={onboardingData.fullName}
               onChange={(e) => handleInputChange('fullName', e.target.value)}
               placeholder="Full Name"
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -70,7 +73,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400">@</div>
             <input
               type="email"
-              value={formData.email}
+              value={onboardingData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Email Address"
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -84,7 +87,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400">📞</div>
             <input
               type="tel"
-              value={formData.phone}
+              value={onboardingData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="Phone Number"
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -100,9 +103,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
               <span className="text-white text-sm font-bold">i</span>
             </div>
           </div>
-          <p className="ml-3 text-sm text-green-800">
-            Your information is secure and will only be used to connect you with other dog owners in your area.
-          </p>
+          <div className="ml-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Why we need this</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• To create your personalized profile</li>
+              <li>• To connect you with nearby dog owners</li>
+              <li>• To send important updates about events</li>
+              <li>• To ensure a safe and verified community</li>
+            </ul>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -118,7 +127,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     >
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Tell us about your dog</h2>
-        <p className="text-gray-600">Help us find the perfect playmates by sharing your dog's details.</p>
+        <p className="text-gray-600">Help us find the perfect matches for your furry friend.</p>
       </div>
 
       <div className="space-y-4">
@@ -128,7 +137,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <Dog className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              value={formData.dogName}
+              value={onboardingData.dogName}
               onChange={(e) => handleInputChange('dogName', e.target.value)}
               placeholder="Dog's Name"
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -140,75 +149,66 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Breed</label>
           <div className="relative">
             <Dog className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <select
-              value={formData.breed}
+            <input
+              type="text"
+              value={onboardingData.breed}
               onChange={(e) => handleInputChange('breed', e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
-            >
-              <option value="">Select Breed</option>
-              <option value="Golden Retriever">Golden Retriever</option>
-              <option value="Labrador">Labrador</option>
-              <option value="Border Collie">Border Collie</option>
-              <option value="German Shepherd">German Shepherd</option>
-              <option value="Mixed Breed">Mixed Breed</option>
-              <option value="Other">Other</option>
-            </select>
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400">▼</div>
+              placeholder="e.g., Golden Retriever, Labrador, etc."
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
-          <div className="flex items-center gap-4">
-            <Cake className="w-5 h-5 text-gray-400" />
-            <button
-              onClick={() => handleInputChange('age', Math.max(1, formData.age - 1))}
-              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
-            >
-              -
-            </button>
-            <span className="text-lg font-medium min-w-[80px] text-center">
-              {formData.age} {formData.age === 1 ? 'year' : 'years'} old
-            </span>
-            <button
-              onClick={() => handleInputChange('age', formData.age + 1)}
-              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
-            >
-              +
-            </button>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Age (years)</label>
+            <div className="relative">
+              <Cake className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="number"
+                min="0"
+                max="25"
+                value={onboardingData.age}
+                onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 1)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Size</label>
-          <div className="grid grid-cols-4 gap-2">
-            {(['Small', 'Medium', 'Large', 'Extra Large'] as const).map((size) => (
-              <button
-                key={size}
-                onClick={() => handleInputChange('size', size)}
-                className={`py-2 px-3 rounded-lg border transition-colors ${
-                  formData.size === size
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
-                }`}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Size</label>
+            <div className="relative">
+              <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <select
+                value={onboardingData.size}
+                onChange={(e) => handleInputChange('size', e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                {size}
-              </button>
-            ))}
+                <option value="Small">Small</option>
+                <option value="Medium">Medium</option>
+                <option value="Large">Large</option>
+                <option value="Extra Large">Extra Large</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm">💡</span>
             </div>
           </div>
-          <p className="ml-3 text-sm text-orange-800">
-            Did you know? Dogs of similar sizes and energy levels often make the best playmates!
-          </p>
+          <div className="ml-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Matching Tips</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Accurate breed info helps find compatible playmates</li>
+              <li>• Size matters for safe play interactions</li>
+              <li>• Age helps match energy levels</li>
+            </ul>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -239,7 +239,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         <div className="flex items-start">
           <div className="flex-shrink-0">
             <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm">💡</span>
+              <span className="text-white text-sm">��</span>
             </div>
           </div>
           <div className="ml-3">
@@ -250,6 +250,99 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
               <li>• Capture their personality and energy</li>
               <li>• Avoid blurry or dark photos</li>
             </ul>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+
+  const renderStep4 = () => (
+    <motion.div
+      key="step4"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Set your preferences</h2>
+        <p className="text-gray-600">Customize your experience and control your privacy settings.</p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Notifications */}
+        <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Bell className="w-6 h-6 text-blue-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Push Notifications</h3>
+              <p className="text-sm text-gray-600">Get notified about matches and events</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={onboardingData.preferences.notifications}
+              onChange={(e) => handlePreferenceChange('notifications', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+        {/* Location Sharing */}
+        <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <MapPin className="w-6 h-6 text-green-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Location Sharing</h3>
+              <p className="text-sm text-gray-600">Find nearby dog owners and events</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={onboardingData.preferences.locationSharing}
+              onChange={(e) => handlePreferenceChange('locationSharing', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+          </label>
+        </div>
+
+        {/* Profile Visibility */}
+        <div className="p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <Shield className="w-6 h-6 text-purple-500" />
+            <div>
+              <h3 className="font-medium text-gray-900">Profile Visibility</h3>
+              <p className="text-sm text-gray-600">Control who can see your profile</p>
+            </div>
+          </div>
+          <select
+            value={onboardingData.preferences.profileVisibility}
+            onChange={(e) => handlePreferenceChange('profileVisibility', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            <option value="public">Public - Anyone can see your profile</option>
+            <option value="friends">Friends Only - Only matched users can see</option>
+            <option value="private">Private - Only you can see</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+          </div>
+          <div className="ml-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Privacy First</h4>
+            <p className="text-sm text-gray-600">
+              You can change these settings anytime in your profile. We never share your personal information with third parties.
+            </p>
           </div>
         </div>
       </div>
@@ -276,9 +369,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           
           {/* Progress Bar */}
           <div className="mt-4">
-            <div className="text-sm text-earth-600 mb-2 font-body">Step {currentStep} of 3</div>
+            <div className="text-sm text-earth-600 mb-2 font-body">Step {currentStep} of 4</div>
             <div className="flex gap-2">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div
                   key={step}
                   className={`h-2 flex-1 rounded-full transition-colors ${
@@ -297,6 +390,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
+          {currentStep === 4 && renderStep4()}
         </AnimatePresence>
       </div>
 
@@ -307,10 +401,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             onClick={nextStep}
             className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg text-lg"
           >
-            {currentStep === 3 ? 'Create Account' : 'Continue'}
+            {currentStep === 4 ? 'Create Account' : 'Continue'}
           </button>
           
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <button className="w-full text-center text-teal-600 py-2 mt-2 font-body hover:text-teal-700 transition-colors">
               Skip for now
             </button>
