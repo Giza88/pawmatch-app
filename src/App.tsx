@@ -12,6 +12,7 @@ import { EventsProvider } from './contexts/EventsContext'
 import { CommunityProvider } from './contexts/CommunityContext'
 import { HealthProvider } from './contexts/HealthContext'
 import { GpsTrackingProvider } from './contexts/GpsTrackingContext'
+import { ProfileProvider } from './contexts/ProfileContext'
 
 function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = React.useState(false)
@@ -25,21 +26,23 @@ function App() {
       <CommunityProvider>
         <EventsProvider>
           <GpsTrackingProvider>
-            <Router>
-              <div className="min-h-screen bg-gray-50">
-                <div className="pb-20"> {/* Add padding bottom for bottom navigation */}
-                  <Routes>
-                    <Route path="/" element={<DiscoverPage />} />
-                    <Route path="/events" element={<EventsPage />} />
-                    <Route path="/community" element={<CommunityPage />} />
-                    <Route path="/health" element={<HealthPage />} />
-                    <Route path="/gps-tracking" element={<GpsTrackingPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                  </Routes>
+            <ProfileProvider>
+              <Router>
+                <div className="min-h-screen bg-gray-50">
+                  <div className="pb-20"> {/* Add padding bottom for bottom navigation */}
+                    <Routes>
+                      <Route path="/" element={<DiscoverPage />} />
+                      <Route path="/events" element={<EventsPage />} />
+                      <Route path="/community" element={<CommunityPage />} />
+                      <Route path="/health" element={<HealthPage />} />
+                      <Route path="/gps-tracking" element={<GpsTrackingPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                    </Routes>
+                  </div>
+                  <BottomNavigation />
                 </div>
-                <BottomNavigation />
-              </div>
-            </Router>
+              </Router>
+            </ProfileProvider>
           </GpsTrackingProvider>
         </EventsProvider>
       </CommunityProvider>

@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { Heart, Calendar, Pill, Syringe, FileText, Plus, AlertCircle, CheckCircle, Clock, MapPin, Phone } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHealth } from '../contexts/HealthContext'
+import CreateVaccinationForm from '../components/CreateVaccinationForm'
+import CreateMedicationForm from '../components/CreateMedicationForm'
+import CreateAppointmentForm from '../components/CreateAppointmentForm'
+import CreateHealthRecordForm from '../components/CreateHealthRecordForm'
 
 export interface Vaccination {
   id: string
@@ -71,7 +75,9 @@ const HealthPage: React.FC = () => {
     { id: 'records', label: 'Records', icon: FileText }
   ]
 
-
+  const closeForm = () => {
+    setShowAddForm(false)
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -511,53 +517,12 @@ const HealthPage: React.FC = () => {
       {/* Add Form Modal */}
       <AnimatePresence>
         {showAddForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={() => setShowAddForm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-earth-200 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="text-xl font-display font-bold text-earth-900 mb-4">
-                {formType === 'vaccination' && 'Add Vaccination'}
-                {formType === 'medication' && 'Add Medication'}
-                {formType === 'appointment' && 'Schedule Appointment'}
-                {formType === 'record' && 'Add Health Record'}
-              </h2>
-              
-              <div className="space-y-4">
-                {/* Form fields would go here based on formType */}
-                <p className="text-gray-600 text-center py-8">
-                  Form implementation coming soon! 🐾
-                </p>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="flex-1 bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    // TODO: Implement form submission
-                    setShowAddForm(false)
-                  }}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                >
-                  Save
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <>
+            {formType === 'vaccination' && <CreateVaccinationForm isOpen={showAddForm} onClose={closeForm} />}
+            {formType === 'medication' && <CreateMedicationForm isOpen={showAddForm} onClose={closeForm} />}
+            {formType === 'appointment' && <CreateAppointmentForm isOpen={showAddForm} onClose={closeForm} />}
+            {formType === 'record' && <CreateHealthRecordForm isOpen={showAddForm} onClose={closeForm} />}
+          </>
         )}
       </AnimatePresence>
     </div>
