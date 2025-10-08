@@ -1,198 +1,172 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { MessageCircle, Hash, X, Image as ImageIcon } from 'lucide-react'
+import { X, Send, Hash } from 'lucide-react'
 import { useCommunity } from '../contexts/CommunityContext'
 
 interface CreatePostFormProps {
-  isOpen: boolean
   onClose: () => void
 }
 
-const CreatePostForm: React.FC<CreatePostFormProps> = ({ isOpen, onClose }) => {
-  const { createPost } = useCommunity()
+const CreatePostForm: React.FC<CreatePostFormProps> = ({ onClose }) => {
+  const { addPost } = useCommunity()
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'general',
-    tags: '',
-    isAnonymous: false
+    category: 'general' as const,
+    tags: ''
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked
-      setFormData(prev => ({ ...prev, [name]: checked }))
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }))
-    }
-  }
+  const categories = [
+    { id: 'general', label: 'General', color: 'bg-blue-500' },
+    { id: 'health', label: 'Health', color: 'bg-green-500' },
+    { id: 'training', label: 'Training', color: 'bg-purple-500' },
+    { id: 'events', label: 'Events', color: 'bg-orange-500' },
+    { id: 'lost-found', label: 'Lost & Found', color: 'bg-red-500' },
+    { id: 'reviews', label: 'Reviews', color: 'bg-teal-500' }
+  ]
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
     
-    try {
-      const newPost = {
-        id: Date.now().toString(),
-        ...formData,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        createdAt: new Date().toISOString(),
-        author: {
-          id: 'current-user',
-          name: formData.isAnonymous ? 'Anonymous' : 'You',
-          avatar: '/placeholder-avatar.jpg'
-        },
-        likes: 0,
-        comments: [],
-        isPinned: false
-      }
-      
-      await createPost(newPost)
-      setFormData({
-        title: '',
-        content: '',
-        category: 'general',
-        tags: '',
-        isAnonymous: false
-      })
-      onClose()
-    } catch (error) {
-      console.error('Error creating post:', error)
-    } finally {
-      setIsSubmitting(false)
-    }
+    if (!formData.title.trim() || !formData.content.trim()) return
+
+    const tags = formData.tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+
+    addPost({
+      title: formData.title.trim(),
+      content: formData.content.trim(),
+      author: 'You',
+      authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      category: formData.category,
+      tags
+    })
+
+    // Reset form and close
+    setFormData({ title: '', content: '', category: 'general', tags: '' })
+    onClose()
   }
 
-  if (!isOpen) return null
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-earth-200 shadow-2xl"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-md border border-earth-200 shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-display font-bold text-earth-900">Create New Post</h2>
+          <h3 className="text-xl font-display font-bold text-earth-900">Create New Post</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-earth-100 rounded-full transition-colors"
+            className="w-8 h-8 bg-earth-100 hover:bg-earth-200 text-earth-600 rounded-full flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5 text-earth-600" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Post Title */}
+          {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-earth-700 mb-2">
-              Post Title *
+            <label className="block text-sm font-medium text-earth-700 mb-2 font-body">
+              Post Title
             </label>
             <input
               type="text"
-              id="title"
-              name="title"
               value={formData.title}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              onChange={(e) => handleInputChange('title', e.target.value)}
               placeholder="What's on your mind?"
+              className="w-full px-3 py-2 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white/80 backdrop-blur-sm font-body"
+              required
             />
           </div>
 
-          {/* Post Content */}
+          {/* Content */}
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-earth-700 mb-2">
-              Content *
+            <label className="block text-sm font-medium text-earth-700 mb-2 font-body">
+              Post Content
             </label>
             <textarea
-              id="content"
-              name="content"
               value={formData.content}
-              onChange={handleInputChange}
-              rows={4}
-              required
-              className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
+              onChange={(e) => handleInputChange('content', e.target.value)}
               placeholder="Share your thoughts, questions, or experiences..."
+              rows={4}
+              className="w-full px-3 py-2 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white/80 backdrop-blur-sm font-body resize-none"
+              required
             />
           </div>
 
           {/* Category */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-earth-700 mb-2">
+            <label className="block text-sm font-medium text-earth-700 mb-2 font-body">
               Category
             </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-            >
-              <option value="general">General Discussion</option>
-              <option value="health">Health & Wellness</option>
-              <option value="training">Training Tips</option>
-              <option value="events">Events & Meetups</option>
-              <option value="lost-found">Lost & Found</option>
-              <option value="reviews">Park & Service Reviews</option>
-              <option value="funny">Funny Stories</option>
-              <option value="advice">Advice Needed</option>
-            </select>
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleInputChange('category', category.id)}
+                  className={`p-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    formData.category === category.id
+                      ? `${category.color} text-white shadow-lg`
+                      : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
+                  }`}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Tags */}
           <div>
-            <label htmlFor="tags" className="block text-sm font-medium text-earth-700 mb-2">
-              Tags (comma separated)
+            <label className="block text-sm font-medium text-earth-700 mb-2 font-body">
+              Tags (optional)
             </label>
-            <input
-              type="text"
-              id="tags"
-              name="tags"
-              value={formData.tags}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-              placeholder="puppy, training, advice"
-            />
-            <p className="text-xs text-earth-500 mt-1">Add relevant tags to help others find your post</p>
-          </div>
-
-          {/* Privacy Setting */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isAnonymous"
-              name="isAnonymous"
-              checked={formData.isAnonymous}
-              onChange={handleInputChange}
-              className="w-4 h-4 text-teal-600 border-earth-300 rounded focus:ring-teal-500"
-            />
-            <label htmlFor="isAnonymous" className="ml-2 text-sm text-earth-700">
-              Post anonymously
-            </label>
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-earth-400" />
+              <input
+                type="text"
+                value={formData.tags}
+                onChange={(e) => handleInputChange('tags', e.target.value)}
+                placeholder="training, health, puppy (separate with commas)"
+                className="w-full pl-10 pr-3 py-2 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white/80 backdrop-blur-sm font-body text-sm"
+              />
+            </div>
+            <p className="text-xs text-earth-500 mt-1">
+              Add relevant tags to help others find your post
+            </p>
           </div>
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-earth-300 disabled:to-earth-400 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:transform-none disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Creating Post...' : 'Create Post'}
-          </button>
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-earth-200 hover:bg-earth-300 text-earth-800 py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!formData.title.trim() || !formData.content.trim()}
+              className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              <Send className="w-4 h-4" />
+              Post
+            </button>
+          </div>
         </form>
       </motion.div>
-    </motion.div>
+    </div>
   )
 }
 

@@ -1,4 +1,4 @@
-# 🐾 Pawfect Match
+# 🐾 Pawmatch™
 
 A community-driven dog matching application that helps dog owners find perfect playmates for their furry friends.
 

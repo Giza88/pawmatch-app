@@ -1,61 +1,108 @@
-import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import DiscoverPage from './pages/DiscoverPage'
 import EventsPage from './pages/EventsPage'
 import CommunityPage from './pages/CommunityPage'
 import HealthPage from './pages/HealthPage'
 import ProfilePage from './pages/ProfilePage'
-import GpsTrackingPage from './pages/GpsTrackingPage'
+import MatchesPage from './pages/MatchesPage'
+import ChatPage from './pages/ChatPage'
 import BottomNavigation from './components/BottomNavigation'
 import OnboardingFlow from './components/OnboardingFlow'
+import LoadingScreen from './components/LoadingScreen'
 import { EventsProvider } from './contexts/EventsContext'
 import { CommunityProvider } from './contexts/CommunityContext'
 import { HealthProvider } from './contexts/HealthContext'
-import { GpsTrackingProvider } from './contexts/GpsTrackingContext'
 import { ProfileProvider } from './contexts/ProfileContext'
+import { ChatProvider } from './contexts/ChatContext'
 import { useOnboarding } from './hooks/useOnboarding'
 
 function App() {
   const { onboardingData, isLoading } = useOnboarding()
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false)
+
+  // Check if onboarding was already completed on app load
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('pawfect-match-onboarding')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed.isCompleted) {
+          console.log('🚀 App loaded - onboarding already completed!')
+          setOnboardingCompleted(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking initial onboarding state:', error)
+    }
+  }, [])
+
+  // Monitor onboarding completion from localStorage or hook
+  useEffect(() => {
+    if (onboardingData.isCompleted) {
+      console.log('🎉 Onboarding completed - transitioning to main app!')
+      setOnboardingCompleted(true)
+    } else {
+      // Fallback: Check localStorage directly
+      try {
+        const stored = localStorage.getItem('pawfect-match-onboarding')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.isCompleted) {
+            console.log('🔍 Found completed onboarding in localStorage, forcing transition!')
+            setOnboardingCompleted(true)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking localStorage:', error)
+      }
+    }
+  }, [onboardingData.isCompleted])
+
+  // Force completion when callback is triggered
+  const handleOnboardingComplete = () => {
+    console.log('🔄 Onboarding completion callback received!')
+    setOnboardingCompleted(true)
+  }
+
+  console.log('🏗️ App render - isLoading:', isLoading, 'isCompleted:', onboardingData.isCompleted, 'onboardingCompleted:', onboardingCompleted)
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-earth-600 font-body">Loading...</p>
-        </div>
-      </div>
-    )
+      console.log('⏳ Showing loading screen...')
+      return <LoadingScreen message="Loading Pawmatch™..." />
   }
 
-  if (!onboardingData.isCompleted) {
-    return <OnboardingFlow onComplete={() => {}} />
+  if (!onboardingData.isCompleted && !onboardingCompleted) {
+    console.log('📝 Showing onboarding flow...')
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />
   }
+
+  console.log('🎉 Showing main app interface!')
 
   return (
     <HealthProvider>
       <CommunityProvider>
         <EventsProvider>
-          <GpsTrackingProvider>
-            <ProfileProvider>
-              <Router>
-                <div className="min-h-screen bg-gray-50">
+            <ChatProvider>
+              <ProfileProvider>
+                <Router>
+                <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
                   <div className="pb-20"> {/* Add padding bottom for bottom navigation */}
                     <Routes>
                       <Route path="/" element={<DiscoverPage />} />
+                      <Route path="/matches" element={<MatchesPage />} />
+                      <Route path="/chat/:conversationId" element={<ChatPage />} />
                       <Route path="/events" element={<EventsPage />} />
                       <Route path="/community" element={<CommunityPage />} />
                       <Route path="/health" element={<HealthPage />} />
-                      <Route path="/gps-tracking" element={<GpsTrackingPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
                     </Routes>
                   </div>
                   <BottomNavigation />
                 </div>
-              </Router>
-            </ProfileProvider>
-          </GpsTrackingProvider>
+                </Router>
+              </ProfileProvider>
+            </ChatProvider>
         </EventsProvider>
       </CommunityProvider>
     </HealthProvider>

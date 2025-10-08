@@ -1,6 +1,6 @@
 import React from 'react'
-import { Heart, Syringe, Pill, AlertCircle, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Heart, Syringe, Pill, AlertCircle, ArrowRight } from 'lucide-react'
 import { DogProfile } from './DogProfileCard'
 
 interface HealthSuggestionProps {
@@ -67,12 +67,15 @@ const HealthSuggestion: React.FC<HealthSuggestionProps> = ({ dog, onViewHealth }
           <Heart className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Keep {dog.name} Healthy!</h3>
           <p className="text-gray-500 mb-3">Track vaccinations, medications, and vet visits</p>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onViewHealth}
-            className="btn-primary py-2 px-6"
+            className="btn-primary py-2 px-6 flex items-center gap-2"
           >
+            <Heart className="w-4 h-4" />
             View Health Dashboard
-          </button>
+          </motion.button>
         </div>
       </motion.div>
     )
@@ -128,12 +131,15 @@ const HealthSuggestion: React.FC<HealthSuggestionProps> = ({ dog, onViewHealth }
         })}
       </div>
 
-      <button
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onViewHealth}
-        className="w-full mt-3 btn-primary py-2 text-sm"
+        className="w-full mt-3 btn-primary py-2 text-sm flex items-center justify-center gap-2"
       >
+        <Heart className="w-4 h-4" />
         Manage Health Records
-      </button>
+      </motion.button>
     </motion.div>
   )
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Camera, User, Dog, Cake, Ruler, Bell, MapPin, Shield, CheckCircle } from 'lucide-react'
 import { useOnboarding } from '../hooks/useOnboarding'
+import Logo from './Logo'
 
 interface OnboardingFlowProps {
   onComplete: () => void
@@ -10,6 +11,8 @@ interface OnboardingFlowProps {
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const { onboardingData, updateOnboardingData, completeOnboarding } = useOnboarding()
   const [currentStep, setCurrentStep] = useState(1)
+  const [dogPhoto, setDogPhoto] = useState<string | null>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleInputChange = (field: string, value: string | number) => {
     updateOnboardingData({ [field]: value })
@@ -24,12 +27,69 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     })
   }
 
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Create a URL for the selected file
+      const photoURL = URL.createObjectURL(file)
+      setDogPhoto(photoURL)
+      // Store the photo URL in onboarding data
+      updateOnboardingData({ dogPhoto: photoURL })
+    }
+  }
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click()
+  }
+
   const nextStep = () => {
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     } else {
       completeOnboarding()
       onComplete()
+    }
+  }
+
+  const skipPhotoStep = () => {
+    // Skip the photo step and go to preferences
+    setCurrentStep(4)
+  }
+
+  const handleCreateAccount = () => {
+    console.log('🎉 Creating account with data:', onboardingData)
+    console.log('🔍 Current onboarding completion status:', onboardingData.isCompleted)
+    
+    try {
+      // Mark onboarding as completed
+      completeOnboarding()
+      console.log('✅ Onboarding marked as completed')
+      
+      // Check if it was actually marked as completed
+      setTimeout(() => {
+        console.log('🔍 Checking completion status after 100ms...')
+        console.log('📊 Updated onboarding data:', onboardingData)
+      }, 100)
+      
+      // Call the completion callback
+      console.log('📞 Calling onComplete callback...')
+      onComplete()
+      console.log('✅ onComplete callback called successfully')
+      
+    } catch (error) {
+      console.error('❌ Error creating account:', error)
+    }
+  }
+
+  const handleSkipOnboarding = () => {
+    console.log('⏭️ Skipping onboarding')
+    try {
+      completeOnboarding()
+      console.log('✅ Onboarding skipped successfully')
+      onComplete()
+      console.log('✅ onComplete callback called')
+    } catch (error) {
+      console.error('❌ Error skipping onboarding:', error)
     }
   }
 
@@ -48,8 +108,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       className="space-y-6"
     >
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Tell us about yourself</h2>
-        <p className="text-gray-600">We need some basic information to create your profile and connect you with other dog owners.</p>
+        <div className="mb-6">
+          <Logo size="lg" showText={true} />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Pawmatch™!</h2>
+        <p className="text-gray-600">Let's get to know you and your furry friend to create the perfect matching experience.</p>
       </div>
 
       <div className="space-y-4">
@@ -228,12 +291,57 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       </div>
 
       <div className="flex justify-center">
-        <div className="w-48 h-48 border-2 border-dashed border-gray-300 rounded-full flex flex-col items-center justify-center hover:border-primary-400 transition-colors cursor-pointer">
-          <Camera className="w-12 h-12 text-gray-400 mb-2" />
-          <span className="text-sm font-medium text-gray-600">Add Dog Photo</span>
-          <span className="text-xs text-gray-500">Tap to select</span>
+        <div 
+          onClick={handlePhotoClick}
+          className={`w-48 h-48 border-2 border-dashed rounded-full flex flex-col items-center justify-center hover:border-teal-400 transition-colors cursor-pointer relative overflow-hidden ${
+            dogPhoto || onboardingData.dogPhoto 
+              ? 'border-teal-400 bg-teal-50' 
+              : 'border-gray-300'
+          }`}
+        >
+          {dogPhoto || onboardingData.dogPhoto ? (
+            <>
+              <img
+                src={dogPhoto || onboardingData.dogPhoto}
+                alt="Dog photo"
+                className="w-full h-full object-cover rounded-full"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 rounded-full flex items-center justify-center">
+                <div className="opacity-0 hover:opacity-100 transition-opacity">
+                  <Camera className="w-8 h-8 text-white" />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <Camera className="w-12 h-12 text-gray-400 mb-2" />
+              <span className="text-sm font-medium text-gray-600">Add Dog Photo</span>
+              <span className="text-xs text-gray-500">Tap to select</span>
+            </>
+          )}
         </div>
       </div>
+
+      {(dogPhoto || onboardingData.dogPhoto) && (
+        <div className="text-center">
+          <p className="text-sm text-green-600 font-medium">✓ Photo uploaded successfully!</p>
+          <button
+            onClick={handlePhotoClick}
+            className="text-sm text-teal-600 hover:text-teal-700 underline mt-1"
+          >
+            Change photo
+          </button>
+        </div>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoUpload}
+        className="hidden"
+      />
 
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-start">
@@ -398,14 +506,26 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       <div className="bg-white/80 backdrop-blur-sm border-t border-earth-200 p-4">
         <div className="max-w-md mx-auto">
           <button
-            onClick={nextStep}
+            onClick={currentStep === 4 ? handleCreateAccount : nextStep}
             className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg text-lg"
           >
             {currentStep === 4 ? 'Create Account' : 'Continue'}
           </button>
           
+          {currentStep === 3 && (
+            <button 
+              onClick={skipPhotoStep}
+              className="w-full text-center text-teal-600 py-2 mt-2 font-body hover:text-teal-700 transition-colors"
+            >
+              Skip photo for now
+            </button>
+          )}
+          
           {currentStep === 4 && (
-            <button className="w-full text-center text-teal-600 py-2 mt-2 font-body hover:text-teal-700 transition-colors">
+            <button 
+              onClick={handleSkipOnboarding}
+              className="w-full text-center text-teal-600 py-2 mt-2 font-body hover:text-teal-700 transition-colors"
+            >
               Skip for now
             </button>
           )}

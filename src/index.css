@@ -1,43 +1,362 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap&text=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Color Overrides for Better Readability */
 @layer base {
   body {
-    @apply bg-gradient-to-br from-earth-50 to-teal-50 text-earth-900 font-body;
+    @apply bg-gray-100 text-gray-900;
+  }
+  
+  /* Improve card backgrounds for better contrast */
+  .bg-white\/80 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+  }
+  
+  .bg-white {
+    background-color: #fafafa !important;
   }
 }
 
+/* CSS Compatibility Fixes */
+@layer base {
+  /* Fix text-size-adjust compatibility - comprehensive approach */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  /* Apply text-size-adjust to all elements for better compatibility */
+  *, *::before, *::after {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Specific fixes for different browsers */
+  @supports (-webkit-text-size-adjust: 100%) {
+    html, body, * {
+      -webkit-text-size-adjust: 100%;
+    }
+  }
+
+  @supports (-moz-text-size-adjust: 100%) {
+    html, body, * {
+      -moz-text-size-adjust: 100%;
+    }
+  }
+  
+  /* Fix backdrop-filter compatibility - comprehensive approach */
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  
+  .backdrop-blur {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  
+  .backdrop-blur-md {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  
+  .backdrop-blur-lg {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  /* Additional backdrop-filter classes for better compatibility */
+  .backdrop-blur-xs {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+
+  /* Safari-specific backdrop-filter support */
+  @supports (-webkit-backdrop-filter: blur(4px)) {
+    .backdrop-blur-sm,
+    .backdrop-blur,
+    .backdrop-blur-md,
+    .backdrop-blur-lg,
+    .backdrop-blur-xs,
+    .backdrop-blur-xl {
+      -webkit-backdrop-filter: blur(4px);
+    }
+  }
+
+  /* Fallback for browsers that don't support backdrop-filter */
+  @supports not (backdrop-filter: blur(4px)) and not (-webkit-backdrop-filter: blur(4px)) {
+    .backdrop-blur-sm,
+    .backdrop-blur,
+    .backdrop-blur-md,
+    .backdrop-blur-lg,
+    .backdrop-blur-xs,
+    .backdrop-blur-xl {
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  /* Fix transform compatibility */
+  .transform {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* Fix transition compatibility */
+  .transition-all {
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+  }
+  
+  /* Fix form field accessibility */
+  input, textarea, select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  /* Fix -moz-appearance compatibility */
+  input, textarea, select, button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  /* Fix box-sizing for all elements */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* Fix scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Fix font rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Fix image rendering - comprehensive approach */
+  img {
+    max-width: 100%;
+    height: auto;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  /* Edge-specific image rendering fix */
+  @supports (image-rendering: crisp-edges) {
+    img {
+      image-rendering: crisp-edges;
+    }
+  }
+
+  /* Webkit-specific image rendering */
+  @supports (image-rendering: -webkit-optimize-contrast) {
+    img {
+      image-rendering: -webkit-optimize-contrast;
+    }
+  }
+
+  /* Fix webkit mask properties compatibility */
+  .mask-image {
+    -webkit-mask-image: var(--mask-image);
+    mask-image: var(--mask-image);
+  }
+
+  .mask-repeat {
+    -webkit-mask-repeat: var(--mask-repeat);
+    mask-repeat: var(--mask-repeat);
+  }
+
+  .mask-size {
+    -webkit-mask-size: var(--mask-size);
+    mask-size: var(--mask-size);
+  }
+
+  /* Fix @-moz-document compatibility warning */
+  @-moz-document url-prefix() {
+    /* Firefox-specific styles can go here if needed */
+  }
+
+  /* Fix animation performance */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+
+  /* Fix focus styles for accessibility */
+  *:focus {
+    outline: 2px solid #14b8a6;
+    outline-offset: 2px;
+  }
+
+  /* Fix button styles */
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Fix performance issues */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  /* Optimize animations for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Fix image loading performance */
+  img[loading="lazy"] {
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  img[loading="lazy"].loaded {
+    opacity: 1;
+  }
+}
+
+/* Custom Font Families */
+@layer base {
+  .font-script {
+    font-family: 'Dancing Script', cursive;
+  }
+  
+  .font-display {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .font-body {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Custom Color Palette */
+@layer base {
+  :root {
+    --color-earth-50: #fafaf9;
+    --color-earth-100: #f5f5f4;
+    --color-earth-200: #e7e5e4;
+    --color-earth-300: #d6d3d1;
+    --color-earth-400: #a8a29e;
+    --color-earth-500: #78716c;
+    --color-earth-600: #57534e;
+    --color-earth-700: #44403c;
+    --color-earth-800: #292524;
+    --color-earth-900: #1c1917;
+    
+    --color-teal-50: #f0fdfa;
+    --color-teal-100: #ccfbf1;
+    --color-teal-200: #99f6e4;
+    --color-teal-300: #5eead4;
+    --color-teal-400: #2dd4bf;
+    --color-teal-500: #14b8a6;
+    --color-teal-600: #0d9488;
+    --color-teal-700: #0f766e;
+    --color-teal-800: #115e59;
+    --color-teal-900: #134e4a;
+    
+    --color-orange-50: #fff7ed;
+    --color-orange-100: #ffedd5;
+    --color-orange-200: #fed7aa;
+    --color-orange-300: #fdba74;
+    --color-orange-400: #fb923c;
+    --color-orange-500: #f97316;
+    --color-orange-600: #ea580c;
+    --color-orange-700: #c2410c;
+    --color-orange-800: #9a3412;
+    --color-orange-900: #7c2d12;
+    
+    --color-nature-50: #f0fdf4;
+    --color-nature-100: #dcfce7;
+    --color-nature-200: #bbf7d0;
+    --color-nature-300: #86efac;
+    --color-nature-400: #4ade80;
+    --color-nature-500: #22c55e;
+    --color-nature-600: #16a34a;
+    --color-nature-700: #15803d;
+    --color-nature-800: #166534;
+    --color-nature-900: #14532d;
+  }
+}
+
+/* Custom Component Styles */
 @layer components {
-  /* Line clamp utilities */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
   .btn-primary {
-    @apply bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    @apply bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
   }
   
   .btn-secondary {
-    @apply bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    @apply bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
   }
   
-  .card {
-    @apply bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-earth-200;
+  .btn-outline {
+    @apply border-2 border-teal-500 text-teal-600 hover:bg-teal-500 hover:text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105;
+  }
+}
+
+/* Line Clamp Utilities */
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
   }
   
-  /* Safe area for bottom navigation */
-  .safe-area-bottom {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}
+
+/* Safe Area Bottom for Mobile */
+.safe-area-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
 }

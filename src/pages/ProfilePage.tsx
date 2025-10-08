@@ -5,6 +5,8 @@ import { AnimatePresence } from 'framer-motion'
 import { useProfile } from '../contexts/ProfileContext'
 import { useOnboarding } from '../hooks/useOnboarding'
 import OnboardingDataViewer from '../components/OnboardingDataViewer'
+import Logo from '../components/Logo'
+import { getNotificationSettings, updateNotificationSettings, requestNotificationPermission, testNotification } from '../utils/notifications'
 
 const ProfilePage: React.FC = () => {
   const { profile, updateProfile, updateAvatar, updateDogPhoto, updatePreferences, signOut } = useProfile()
@@ -15,6 +17,9 @@ const ProfilePage: React.FC = () => {
   const [isChangingPrivacy, setIsChangingPrivacy] = useState(false)
   const [showResetOnboarding, setShowResetOnboarding] = useState(false)
   const [showOnboardingData, setShowOnboardingData] = useState(false)
+  const [notificationSettings, setNotificationSettings] = useState(getNotificationSettings())
+  const profilePhotoInputRef = React.useRef<HTMLInputElement>(null)
+  const dogPhotoInputRef = React.useRef<HTMLInputElement>(null)
   const [editForm, setEditForm] = useState({
     name: profile.name,
     email: profile.email,
@@ -86,16 +91,47 @@ const ProfilePage: React.FC = () => {
     setEditForm(prev => ({ ...prev, [name]: value }))
   }
 
-  const handlePhotoChange = async (type: 'avatar' | 'dogPhoto', url: string) => {
+  const handlePhotoChange = async (type: 'avatar' | 'dogPhoto', file: File) => {
     try {
+      // Create a URL for the selected file
+      const photoURL = URL.createObjectURL(file)
+      
       if (type === 'avatar') {
-        await updateAvatar(url)
+        await updateAvatar(photoURL)
       } else {
-        await updateDogPhoto(url)
+        await updateDogPhoto(photoURL)
       }
       setIsChangingPhotos(false)
+      console.log(`✅ ${type} photo updated successfully`)
     } catch (error) {
       console.error('Error updating photo:', error)
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'dogPhoto') => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Please select an image smaller than 5MB')
+        return
+      }
+      
+      handlePhotoChange(type, file)
+    }
+  }
+
+  const handlePhotoClick = (type: 'avatar' | 'dogPhoto') => {
+    if (type === 'avatar') {
+      profilePhotoInputRef.current?.click()
+    } else {
+      dogPhotoInputRef.current?.click()
     }
   }
 
@@ -105,6 +141,23 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
       console.error('Error updating preferences:', error)
     }
+  }
+
+  const handleNotificationPermissionRequest = async () => {
+    try {
+      const permission = await requestNotificationPermission()
+      if (permission === 'granted') {
+        setNotificationSettings(prev => ({ ...prev, enabled: true }))
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error)
+    }
+  }
+
+  const handleNotificationSettingChange = (key: keyof typeof notificationSettings, value: boolean) => {
+    const newSettings = { ...notificationSettings, [key]: value }
+    setNotificationSettings(newSettings)
+    updateNotificationSettings(newSettings)
   }
 
   const handleSignOut = async () => {
@@ -152,7 +205,10 @@ const ProfilePage: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-earth-200">
         <div className="max-w-md mx-auto px-4 py-4">
-          <h2 className="text-2xl font-display font-bold text-earth-900">Profile</h2>
+          <div className="flex items-center justify-center">
+            <Logo size="md" showText={false} />
+            <h2 className="text-2xl font-display font-bold text-earth-900 ml-3">Profile</h2>
+          </div>
         </div>
       </div>
 
@@ -172,7 +228,10 @@ const ProfilePage: React.FC = () => {
                 alt={profile.name}
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
               />
-              <button className="absolute bottom-0 right-0 w-8 h-8 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110">
+              <button 
+                onClick={() => setIsChangingPhotos(true)}
+                className="absolute bottom-0 right-0 w-8 h-8 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110"
+              >
                 <Camera className="w-4 h-4" />
               </button>
             </div>
@@ -434,50 +493,72 @@ const ProfilePage: React.FC = () => {
                 {/* Profile Photo */}
                 <div className="text-center">
                   <h3 className="text-lg font-medium text-earth-900 mb-3">Profile Photo</h3>
-                  <div className="relative inline-block mb-4">
+                  <div 
+                    onClick={() => handlePhotoClick('avatar')}
+                    className="relative inline-block mb-4 cursor-pointer group"
+                  >
                     <img
                       src={profile.avatar}
                       alt="Profile"
-                      className="w-20 h-20 rounded-full object-cover border-2 border-earth-200"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-earth-200 group-hover:border-teal-400 transition-colors"
                     />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-full flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="url"
-                    placeholder="Enter new profile photo URL"
-                    className="w-full px-3 py-2 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white/80 backdrop-blur-sm font-body text-sm"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        const target = e.target as HTMLInputElement
-                        if (target.value) handlePhotoChange('avatar', target.value)
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-earth-500 mt-2">Press Enter to update</p>
+                  <button
+                    onClick={() => handlePhotoClick('avatar')}
+                    className="w-full bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    📷 Choose Profile Photo
+                  </button>
+                  <p className="text-xs text-earth-500 mt-2">Click to select from your device</p>
                 </div>
 
                 {/* Dog Photo */}
                 <div className="text-center">
                   <h3 className="text-lg font-medium text-earth-900 mb-3">Dog Photo</h3>
-                  <div className="relative inline-block mb-4">
+                  <div 
+                    onClick={() => handlePhotoClick('dogPhoto')}
+                    className="relative inline-block mb-4 cursor-pointer group"
+                  >
                     <img
                       src={profile.dogPhoto}
                       alt="Dog"
-                      className="w-20 h-20 rounded-xl object-cover border-2 border-earth-200"
+                      className="w-20 h-20 rounded-xl object-cover border-2 border-earth-200 group-hover:border-teal-400 transition-colors"
                     />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-xl flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="url"
-                    placeholder="Enter new dog photo URL"
-                    className="w-full px-3 py-2 border border-earth-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white/80 backdrop-blur-sm font-body text-sm"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        const target = e.target as HTMLInputElement
-                        if (target.value) handlePhotoChange('dogPhoto', target.value)
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-earth-500 mt-2">Press Enter to update</p>
+                  <button
+                    onClick={() => handlePhotoClick('dogPhoto')}
+                    className="w-full bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    📷 Choose Dog Photo
+                  </button>
+                  <p className="text-xs text-earth-500 mt-2">Click to select from your device</p>
                 </div>
+
+                {/* Hidden file inputs */}
+                <input
+                  ref={profilePhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, 'avatar')}
+                  className="hidden"
+                />
+                <input
+                  ref={dogPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, 'dogPhoto')}
+                  className="hidden"
+                />
               </div>
             </motion.div>
           </motion.div>
@@ -511,37 +592,154 @@ const ProfilePage: React.FC = () => {
                 </button>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-earth-900">Push Notifications</h3>
-                    <p className="text-sm text-earth-600">Receive notifications about matches and events</p>
+              <div className="space-y-6">
+                {/* Notification Permission */}
+                <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-earth-900">🔔 Browser Notifications</h3>
+                      <p className="text-sm text-earth-600">Enable notifications for matches and updates</p>
+                      <p className="text-xs text-earth-500 mt-1">
+                        Status: {Notification.permission} | Settings: {notificationSettings.enabled ? 'Enabled' : 'Disabled'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleNotificationPermissionRequest}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        notificationSettings.enabled
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-teal-100 text-teal-800 hover:bg-teal-200'
+                      }`}
+                    >
+                      {notificationSettings.enabled ? 'Enabled' : 'Enable'}
+                    </button>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={profile.preferences.notifications}
-                      onChange={(e) => handlePreferenceChange('notifications', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                  </label>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-earth-900">Location Sharing</h3>
-                    <p className="text-sm text-earth-600">Share your location for nearby matches</p>
+                {/* Notification Types */}
+                {notificationSettings.enabled && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-earth-900">Notification Types</h4>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-earth-900">New Matches</h3>
+                        <p className="text-sm text-earth-600">Get notified when you match with someone</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.matches}
+                          onChange={(e) => handleNotificationSettingChange('matches', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-earth-900">Event Reminders</h3>
+                        <p className="text-sm text-earth-600">Reminders for upcoming events</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.events}
+                          onChange={(e) => handleNotificationSettingChange('events', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-earth-900">Health Alerts</h3>
+                        <p className="text-sm text-earth-600">Vaccination and medication reminders</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.health}
+                          onChange={(e) => handleNotificationSettingChange('health', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-earth-900">Community Activity</h3>
+                        <p className="text-sm text-earth-600">Likes, comments, and mentions</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.community}
+                          onChange={(e) => handleNotificationSettingChange('community', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-earth-900">Sound Effects</h3>
+                        <p className="text-sm text-earth-600">Play sounds with notifications</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.sound}
+                          onChange={(e) => handleNotificationSettingChange('sound', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                      </label>
+                    </div>
+
+                    {/* Test Notification Button */}
+                    <div className="pt-4 border-t border-earth-200">
+                      <button
+                        onClick={async () => {
+                          console.log('🔔 Test Notification button clicked')
+                          console.log('Current notification settings:', notificationSettings)
+                          console.log('Browser notification permission:', Notification.permission)
+                          try {
+                            await testNotification()
+                            console.log('✅ Test notification function completed')
+                          } catch (error) {
+                            console.error('❌ Test notification function failed:', error)
+                          }
+                        }}
+                        className="w-full bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        🔔 Test Notification
+                      </button>
+                    </div>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={profile.preferences.locationSharing}
-                      onChange={(e) => handlePreferenceChange('locationSharing', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                  </label>
+                )}
+
+                {/* Other Preferences */}
+                <div className="pt-4 border-t border-earth-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-earth-900">Location Sharing</h3>
+                      <p className="text-sm text-earth-600">Share your location for nearby matches</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={profile.preferences.locationSharing}
+                        onChange={(e) => handlePreferenceChange('locationSharing', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-earth-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-earth-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -595,7 +793,24 @@ const ProfilePage: React.FC = () => {
                   <p className="text-sm text-earth-600 mb-4">
                     We respect your privacy and never share your personal information with third parties.
                   </p>
-                  <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
+                  <button 
+                    onClick={() => {
+                      // In a real app, this would generate and download user data
+                      const userData = {
+                        profile: profile,
+                        timestamp: new Date().toISOString()
+                      }
+                      const dataStr = JSON.stringify(userData, null, 2)
+                      const dataBlob = new Blob([dataStr], {type: 'application/json'})
+                      const url = URL.createObjectURL(dataBlob)
+                      const link = document.createElement('a')
+                      link.href = url
+                      link.download = 'pawmatch-user-data.json'
+                      link.click()
+                      URL.revokeObjectURL(url)
+                    }}
+                    className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                  >
                     Download My Data
                   </button>
                 </div>

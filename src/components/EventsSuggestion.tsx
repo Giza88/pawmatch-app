@@ -1,8 +1,9 @@
 import React from 'react'
-import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react'
 import { DogEvent } from '../pages/EventsPage'
 import { DogProfile } from './DogProfileCard'
+import { useEvents } from '../contexts/EventsContext'
 
 interface EventsSuggestionProps {
   dog: DogProfile
@@ -11,6 +12,8 @@ interface EventsSuggestionProps {
 }
 
 const EventsSuggestion: React.FC<EventsSuggestionProps> = ({ dog, events, onViewEvents }) => {
+  const { joinEvent } = useEvents()
+  
   // Filter events that would be good for this dog
   const relevantEvents = events.filter(event => {
     const sizeMatch = event.dogSize === 'All Sizes' || event.dogSize === dog.size
@@ -30,12 +33,15 @@ const EventsSuggestion: React.FC<EventsSuggestionProps> = ({ dog, events, onView
           <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found for {dog.name}</h3>
           <p className="text-gray-500 mb-3">Check out all available events or create your own!</p>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onViewEvents}
-            className="btn-primary py-2 px-6"
+            className="btn-primary py-2 px-6 flex items-center gap-2"
           >
+            <Calendar className="w-4 h-4" />
             Browse Events
-          </button>
+          </motion.button>
         </div>
       </motion.div>
     )
@@ -91,16 +97,33 @@ const EventsSuggestion: React.FC<EventsSuggestionProps> = ({ dog, events, onView
                 <span>{event.currentDogs}/{event.maxDogs} dogs</span>
               </div>
             </div>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => joinEvent(event.id)}
+              disabled={event.currentDogs >= event.maxDogs}
+              className={`w-full mt-2 py-1.5 px-3 rounded-lg text-xs font-medium transition-all duration-300 ${
+                event.currentDogs >= event.maxDogs
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-teal-500 hover:bg-teal-600 text-white'
+              }`}
+            >
+              {event.currentDogs >= event.maxDogs ? 'Event Full' : 'Quick Join'}
+            </motion.button>
           </div>
         ))}
       </div>
 
-      <button
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onViewEvents}
-        className="w-full mt-3 btn-primary py-2 text-sm"
+        className="w-full mt-3 btn-primary py-2 text-sm flex items-center justify-center gap-2"
       >
+        <Calendar className="w-4 h-4" />
         Browse More Events
-      </button>
+      </motion.button>
     </motion.div>
   )
 }

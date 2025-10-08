@@ -1,6 +1,6 @@
-import React from 'react'
-import { motion, PanInfo } from 'framer-motion'
-import { MapPin, Dog, Calendar, Ruler } from 'lucide-react'
+import React, { useState } from 'react'
+import { motion, PanInfo, AnimatePresence } from 'framer-motion'
+import { MapPin, Dog, Calendar, Ruler, Heart, X } from 'lucide-react'
 
 export interface DogProfile {
   id: string
@@ -11,6 +11,7 @@ export interface DogProfile {
   energyLevel: 'Low' | 'Medium' | 'High'
   friendliness: 'Shy' | 'Friendly' | 'Very Friendly'
   distance: number
+  location?: string
   photos: string[]
   bio: string
   ownerNotes: string
@@ -23,13 +24,34 @@ interface DogProfileCardProps {
 }
 
 const DogProfileCard: React.FC<DogProfileCardProps> = ({ dog, onSwipe, isActive }) => {
+  const [dragDirection, setDragDirection] = useState<'left' | 'right' | null>(null)
+  const [dragProgress, setDragProgress] = useState(0)
+
   const handleDragEnd = (_event: any, info: PanInfo) => {
     if (!isActive) return
     const swipeThreshold = 100
+    setDragDirection(null)
+    setDragProgress(0)
+    
     if (info.offset.x > swipeThreshold) {
       onSwipe('right') // Like
     } else if (info.offset.x < -swipeThreshold) {
       onSwipe('left') // Dislike
+    }
+  }
+
+  const handleDrag = (_event: any, info: PanInfo) => {
+    if (!isActive) return
+    
+    const progress = Math.min(Math.abs(info.offset.x) / 100, 1)
+    setDragProgress(progress)
+    
+    if (info.offset.x > 50) {
+      setDragDirection('right')
+    } else if (info.offset.x < -50) {
+      setDragDirection('left')
+    } else {
+      setDragDirection(null)
     }
   }
 
@@ -39,10 +61,49 @@ const DogProfileCard: React.FC<DogProfileCardProps> = ({ dog, onSwipe, isActive 
       drag={isActive ? 'x' : false}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      whileDrag={{ scale: 1.05 }}
+      onDrag={handleDrag}
+      whileDrag={{ scale: 1.05, rotate: dragDirection === 'right' ? 5 : dragDirection === 'left' ? -5 : 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      style={{
+        filter: dragProgress > 0.5 ? `brightness(${1 + dragProgress * 0.2})` : 'brightness(1)'
+      }}
     >
       <div className="relative w-full h-full">
+        {/* Swipe Direction Indicators */}
+        <AnimatePresence>
+          {dragDirection === 'right' && (
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.5 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     exit={{ opacity: 0, scale: 0.5 }}
+                     className="absolute inset-0 z-30 flex items-center justify-center"
+                   >
+                     <div className="bg-green-500/90 text-white px-8 py-4 rounded-2xl shadow-2xl">
+                       <div className="flex items-center gap-3">
+                         <Heart className="w-8 h-8" />
+                         <span className="text-2xl font-bold font-display">LIKE!</span>
+                       </div>
+                     </div>
+                   </motion.div>
+          )}
+          
+          {dragDirection === 'left' && (
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.5 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     exit={{ opacity: 0, scale: 0.5 }}
+                     className="absolute inset-0 z-30 flex items-center justify-center"
+                   >
+                     <div className="bg-red-500/90 text-white px-8 py-4 rounded-2xl shadow-2xl">
+                       <div className="flex items-center gap-3">
+                         <X className="w-8 h-8" />
+                         <span className="text-2xl font-bold font-display">PASS</span>
+                       </div>
+                     </div>
+                   </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Main Image */}
         <div className="relative w-full h-full rounded-2xl overflow-hidden">
           <img

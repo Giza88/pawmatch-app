@@ -34,7 +34,17 @@ interface HealthProviderProps {
 }
 
 export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
-  const [vaccinations, setVaccinations] = useState<Vaccination[]>([
+  // Load vaccinations from localStorage or use defaults
+  const [vaccinations, setVaccinations] = useState<Vaccination[]>(() => {
+    const saved = localStorage.getItem('healthVaccinations')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse vaccinations:', e)
+      }
+    }
+    return [
     {
       id: '1',
       name: 'Rabies',
@@ -65,9 +75,20 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       vet: 'Dr. Sarah Johnson',
       notes: '6-month booster'
     }
-  ])
+  ]
+  })
 
-  const [medications, setMedications] = useState<Medication[]>([
+  // Load medications from localStorage or use defaults
+  const [medications, setMedications] = useState<Medication[]>(() => {
+    const saved = localStorage.getItem('healthMedications')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse medications:', e)
+      }
+    }
+    return [
     {
       id: '1',
       name: 'Heartgard Plus',
@@ -75,7 +96,7 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       frequency: 'Monthly',
       startDate: '2024-01-01',
       isActive: true,
-      notes: 'Heartworm prevention'
+      notes: 'Heartworm prevention - currently active'
     },
     {
       id: '2',
@@ -84,11 +105,49 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       frequency: 'Monthly',
       startDate: '2024-01-01',
       isActive: true,
-      notes: 'Flea and tick prevention'
+      notes: 'Flea and tick prevention - currently active'
+    },
+    {
+      id: '3',
+      name: 'Rimadyl',
+      dosage: '100mg tablet',
+      frequency: 'Twice daily',
+      startDate: '2024-01-10',
+      isActive: false,
+      notes: 'Pain medication for arthritis - completed 2-week course'
+    },
+    {
+      id: '4',
+      name: 'Amoxicillin',
+      dosage: '250mg capsule',
+      frequency: 'Twice daily',
+      startDate: '2024-01-05',
+      isActive: false,
+      notes: 'Antibiotic for skin infection - completed 10-day course'
+    },
+    {
+      id: '5',
+      name: 'Metronidazole',
+      dosage: '250mg tablet',
+      frequency: 'Twice daily',
+      startDate: '2024-01-20',
+      isActive: false,
+      notes: 'Antibiotic for digestive issues - completed 7-day course'
     }
-  ])
+  ]
+  })
 
-  const [appointments, setAppointments] = useState<VetAppointment[]>([
+  // Load appointments from localStorage or use defaults
+  const [appointments, setAppointments] = useState<VetAppointment[]>(() => {
+    const saved = localStorage.getItem('healthAppointments')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse appointments:', e)
+      }
+    }
+    return [
     {
       id: '1',
       type: 'Checkup',
@@ -111,9 +170,20 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       notes: 'Bordetella booster',
       isCompleted: false
     }
-  ])
+  ]
+  })
 
-  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([
+  // Load health records from localStorage or use defaults
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>(() => {
+    const saved = localStorage.getItem('healthRecords')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse health records:', e)
+      }
+    }
+    return [
     {
       id: '1',
       title: 'Rabies Certificate',
@@ -130,14 +200,19 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       vet: 'Dr. Sarah Johnson',
       notes: 'Annual wellness blood work - all normal'
     }
-  ])
+  ]
+  })
 
   const addVaccination = (vaccinationData: Omit<Vaccination, 'id'>) => {
     const newVaccination: Vaccination = {
       ...vaccinationData,
       id: Date.now().toString()
     }
-    setVaccinations(prev => [newVaccination, ...prev])
+    setVaccinations(prev => {
+      const updated = [newVaccination, ...prev]
+      localStorage.setItem('healthVaccinations', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const addMedication = (medicationData: Omit<Medication, 'id'>) => {
@@ -145,7 +220,11 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       ...medicationData,
       id: Date.now().toString()
     }
-    setMedications(prev => [newMedication, ...prev])
+    setMedications(prev => {
+      const updated = [newMedication, ...prev]
+      localStorage.setItem('healthMedications', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const addAppointment = (appointmentData: Omit<VetAppointment, 'id'>) => {
@@ -153,7 +232,11 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       ...appointmentData,
       id: Date.now().toString()
     }
-    setAppointments(prev => [newAppointment, ...prev])
+    setAppointments(prev => {
+      const updated = [newAppointment, ...prev]
+      localStorage.setItem('healthAppointments', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const addHealthRecord = (recordData: Omit<HealthRecord, 'id'>) => {
@@ -161,25 +244,41 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
       ...recordData,
       id: Date.now().toString()
     }
-    setHealthRecords(prev => [newRecord, ...prev])
+    setHealthRecords(prev => {
+      const updated = [newRecord, ...prev]
+      localStorage.setItem('healthRecords', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const updateVaccination = (id: string, updates: Partial<Vaccination>) => {
-    setVaccinations(prev => prev.map(vaccination => 
-      vaccination.id === id ? { ...vaccination, ...updates } : vaccination
-    ))
+    setVaccinations(prev => {
+      const updated = prev.map(vaccination => 
+        vaccination.id === id ? { ...vaccination, ...updates } : vaccination
+      )
+      localStorage.setItem('healthVaccinations', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const updateMedication = (id: string, updates: Partial<Medication>) => {
-    setMedications(prev => prev.map(medication => 
-      medication.id === id ? { ...medication, ...updates } : medication
-    ))
+    setMedications(prev => {
+      const updated = prev.map(medication => 
+        medication.id === id ? { ...medication, ...updates } : medication
+      )
+      localStorage.setItem('healthMedications', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const updateAppointment = (id: string, updates: Partial<VetAppointment>) => {
-    setAppointments(prev => prev.map(appointment => 
-      appointment.id === id ? { ...appointment, ...updates } : appointment
-    ))
+    setAppointments(prev => {
+      const updated = prev.map(appointment => 
+        appointment.id === id ? { ...appointment, ...updates } : appointment
+      )
+      localStorage.setItem('healthAppointments', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const getUpcomingVaccinations = () => {

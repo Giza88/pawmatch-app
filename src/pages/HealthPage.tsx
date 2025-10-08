@@ -1,11 +1,17 @@
-import React, { useState } from 'react'
-import { Heart, Calendar, Pill, Syringe, FileText, Plus, AlertCircle, CheckCircle, Clock, MapPin, Phone } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Heart, Calendar, Pill, Syringe, FileText, Plus, MapPin, Phone, Search } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHealth } from '../contexts/HealthContext'
 import CreateVaccinationForm from '../components/CreateVaccinationForm'
 import CreateMedicationForm from '../components/CreateMedicationForm'
 import CreateAppointmentForm from '../components/CreateAppointmentForm'
 import CreateHealthRecordForm from '../components/CreateHealthRecordForm'
+import LoadingScreen from '../components/LoadingScreen'
+import HealthDashboard from '../components/HealthDashboard'
+import MedicationReminder from '../components/MedicationReminder'
+import EmergencyContacts from '../components/EmergencyContacts'
+import Logo from '../components/Logo'
+import { sendHealthAlert } from '../utils/notifications'
 
 export interface Vaccination {
   id: string
@@ -57,18 +63,79 @@ const HealthPage: React.FC = () => {
     vaccinations, 
     medications, 
     appointments, 
-    healthRecords,
-    getUpcomingVaccinations,
-    getOverdueVaccinations,
-    getUpcomingAppointments
+    healthRecords
   } = useHealth()
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'vaccinations' | 'medications' | 'appointments' | 'records'>('overview')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'reminders' | 'contacts' | 'vaccinations' | 'medications' | 'appointments' | 'records'>('dashboard')
   const [showAddForm, setShowAddForm] = useState(false)
   const [formType, setFormType] = useState<'vaccination' | 'medication' | 'appointment' | 'record'>('vaccination')
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Simulate loading time
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Check for health alerts on component load
+  useEffect(() => {
+    const checkHealthAlerts = () => {
+      // Check for overdue vaccinations
+      vaccinations.forEach(vaccination => {
+        if (vaccination.isOverdue) {
+          sendHealthAlert('vaccination', vaccination.name, 'high')
+        } else if (vaccination.isUpcoming) {
+          sendHealthAlert('vaccination', vaccination.name, 'medium')
+        }
+      })
+
+      // Check for medication reminders (example: if medication is active and needs attention)
+      medications.forEach(medication => {
+        if (medication.isActive) {
+          // In a real app, you'd check if it's time for the next dose
+          // For demo purposes, we'll just send a general reminder
+          const today = new Date()
+          const lastGiven = medication.lastGiven ? new Date(medication.lastGiven) : new Date(medication.startDate)
+          const daysSinceLastGiven = Math.floor((today.getTime() - lastGiven.getTime()) / (1000 * 60 * 60 * 24))
+          
+          if (daysSinceLastGiven >= 1) { // Example: remind if it's been a day
+            sendHealthAlert('medication', medication.name, 'medium')
+          }
+        }
+      })
+
+      // Check for upcoming appointments
+      appointments.forEach(appointment => {
+        if (!appointment.isCompleted) {
+          const appointmentDate = new Date(appointment.date)
+          const today = new Date()
+          const daysUntilAppointment = Math.floor((appointmentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+          
+          if (daysUntilAppointment <= 1 && daysUntilAppointment >= 0) {
+            sendHealthAlert('appointment', `${appointment.type} with ${appointment.vet}`, 'medium')
+          }
+        }
+      })
+    }
+
+    // Check alerts after loading is complete
+    if (!isLoading) {
+      setTimeout(checkHealthAlerts, 2000) // Wait 2 seconds after loading
+    }
+  }, [isLoading, vaccinations, medications, appointments])
+
+  if (isLoading) {
+    return <LoadingScreen message="Loading health records..." />
+  }
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: Heart },
+    { id: 'dashboard', label: 'Dashboard', icon: Heart },
+    { id: 'reminders', label: 'Reminders', icon: Pill },
+    { id: 'contacts', label: 'Emergency', icon: Phone },
     { id: 'vaccinations', label: 'Vaccinations', icon: Syringe },
     { id: 'medications', label: 'Medications', icon: Pill },
     { id: 'appointments', label: 'Appointments', icon: Calendar },
@@ -96,158 +163,42 @@ const HealthPage: React.FC = () => {
     return `${displayHour}:${minutes} ${ampm}`
   }
 
-  const getDaysUntil = (dateString: string) => {
-    const now = new Date()
-    const targetDate = new Date(dateString)
-    const diffTime = targetDate.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
+  const renderVaccinations = () => {
+    const filteredVaccinations = vaccinations.filter(vaccination => {
+      if (!searchTerm) return true
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        vaccination.name.toLowerCase().includes(searchLower) ||
+        vaccination.vet.toLowerCase().includes(searchLower) ||
+        (vaccination.notes && vaccination.notes.toLowerCase().includes(searchLower))
+      )
+    })
 
-  const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Health Summary Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Up to Date</p>
-              <p className="text-xl font-bold text-gray-900">{vaccinations.filter(v => !v.isOverdue && !v.isUpcoming).length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-              <Clock className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Due Soon</p>
-              <p className="text-xl font-bold text-gray-900">{getUpcomingVaccinations().length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Overdue</p>
-              <p className="text-xl font-bold text-gray-900">{getOverdueVaccinations().length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <Pill className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Active Meds</p>
-              <p className="text-xl font-bold text-gray-900">{medications.filter(m => m.isActive).length}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Upcoming Vaccinations */}
-      {getUpcomingVaccinations().length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Vaccinations Due Soon</h3>
-          <div className="space-y-3">
-            {getUpcomingVaccinations().map((vaccination) => (
-              <div key={vaccination.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div>
-                  <p className="font-medium text-gray-900">{vaccination.name}</p>
-                  <p className="text-sm text-gray-600">Due: {formatDate(vaccination.nextDueDate)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-yellow-800">
-                    {getDaysUntil(vaccination.nextDueDate)} days
-                  </p>
-                  <p className="text-xs text-gray-600">{vaccination.vet}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Overdue Vaccinations */}
-      {getOverdueVaccinations().length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Overdue Vaccinations</h3>
-          <div className="space-y-3">
-            {getOverdueVaccinations().map((vaccination) => (
-              <div key={vaccination.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                <div>
-                  <p className="font-medium text-gray-900">{vaccination.name}</p>
-                  <p className="text-sm text-gray-600">Was due: {formatDate(vaccination.nextDueDate)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-red-800">
-                    {Math.abs(getDaysUntil(vaccination.nextDueDate))} days overdue
-                  </p>
-                  <p className="text-xs text-gray-600">{vaccination.vet}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Upcoming Appointments */}
-      {getUpcomingAppointments().length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Upcoming Appointments</h3>
-          <div className="space-y-3">
-            {getUpcomingAppointments().slice(0, 3).map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div>
-                  <p className="font-medium text-gray-900">{appointment.type}</p>
-                  <p className="text-sm text-gray-600">
-                    {formatDate(appointment.date)} at {formatTime(appointment.time)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-blue-800">
-                    {getDaysUntil(appointment.date)} days
-                  </p>
-                  <p className="text-xs text-gray-600">{appointment.vet}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-
-  const renderVaccinations = () => (
+    return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Vaccination History</h3>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => {
             setFormType('vaccination')
             setShowAddForm(true)
           }}
-          className="btn-primary py-2 px-4"
+          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-5 h-5" />
           Add Vaccination
-        </button>
+        </motion.button>
       </div>
 
+      {filteredVaccinations.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>No vaccinations found{searchTerm && ' matching your search'}.</p>
+        </div>
+      ) : (
       <div className="space-y-3">
-        {vaccinations.map((vaccination) => (
+        {filteredVaccinations.map((vaccination) => (
           <motion.div
             key={vaccination.id}
             initial={{ opacity: 0, y: 20 }}
@@ -283,27 +234,48 @@ const HealthPage: React.FC = () => {
           </motion.div>
         ))}
       </div>
+      )}
     </div>
-  )
+    )
+  }
 
-  const renderMedications = () => (
+  const renderMedications = () => {
+    const filteredMedications = medications.filter(medication => {
+      if (!searchTerm) return true
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        medication.name.toLowerCase().includes(searchLower) ||
+        medication.dosage.toLowerCase().includes(searchLower) ||
+        medication.frequency.toLowerCase().includes(searchLower) ||
+        (medication.notes && medication.notes.toLowerCase().includes(searchLower))
+      )
+    })
+
+    return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Medications</h3>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => {
             setFormType('medication')
             setShowAddForm(true)
           }}
-          className="btn-primary py-2 px-4"
+          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-5 h-5" />
           Add Medication
-        </button>
+        </motion.button>
       </div>
 
+      {filteredMedications.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>No medications found{searchTerm && ' matching your search'}.</p>
+        </div>
+      ) : (
       <div className="space-y-3">
-        {medications.map((medication) => (
+        {filteredMedications.map((medication) => (
           <motion.div
             key={medication.id}
             initial={{ opacity: 0, y: 20 }}
@@ -335,27 +307,48 @@ const HealthPage: React.FC = () => {
           </motion.div>
         ))}
       </div>
+      )}
     </div>
-  )
+    )
+  }
 
-  const renderAppointments = () => (
+  const renderAppointments = () => {
+    const filteredAppointments = appointments.filter(appointment => {
+      if (!searchTerm) return true
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        appointment.type.toLowerCase().includes(searchLower) ||
+        appointment.vet.toLowerCase().includes(searchLower) ||
+        appointment.location.toLowerCase().includes(searchLower) ||
+        (appointment.notes && appointment.notes.toLowerCase().includes(searchLower))
+      )
+    })
+
+    return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Vet Appointments</h3>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => {
             setFormType('appointment')
             setShowAddForm(true)
           }}
-          className="btn-primary py-2 px-4"
+          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-5 h-5" />
           Schedule Appointment
-        </button>
+        </motion.button>
       </div>
 
+      {filteredAppointments.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>No appointments found{searchTerm && ' matching your search'}.</p>
+        </div>
+      ) : (
       <div className="space-y-3">
-        {appointments.map((appointment) => (
+        {filteredAppointments.map((appointment) => (
           <motion.div
             key={appointment.id}
             initial={{ opacity: 0, y: 20 }}
@@ -394,27 +387,48 @@ const HealthPage: React.FC = () => {
           </motion.div>
         ))}
       </div>
+      )}
     </div>
-  )
+    )
+  }
 
-  const renderRecords = () => (
+  const renderRecords = () => {
+    const filteredHealthRecords = healthRecords.filter(record => {
+      if (!searchTerm) return true
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        record.title.toLowerCase().includes(searchLower) ||
+        record.type.toLowerCase().includes(searchLower) ||
+        record.vet.toLowerCase().includes(searchLower) ||
+        (record.notes && record.notes.toLowerCase().includes(searchLower))
+      )
+    })
+
+    return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Health Records</h3>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => {
             setFormType('record')
             setShowAddForm(true)
           }}
-          className="btn-primary py-2 px-4"
+          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-5 h-5" />
           Add Record
-        </button>
+        </motion.button>
       </div>
 
+      {filteredHealthRecords.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>No health records found{searchTerm && ' matching your search'}.</p>
+        </div>
+      ) : (
       <div className="space-y-3">
-        {healthRecords.map((record) => (
+        {filteredHealthRecords.map((record) => (
           <motion.div
             key={record.id}
             initial={{ opacity: 0, y: 20 }}
@@ -440,13 +454,19 @@ const HealthPage: React.FC = () => {
           </motion.div>
         ))}
       </div>
+      )}
     </div>
-  )
+    )
+  }
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview':
-        return renderOverview()
+      case 'dashboard':
+        return <HealthDashboard />
+      case 'reminders':
+        return <MedicationReminder />
+      case 'contacts':
+        return <EmergencyContacts />
       case 'vaccinations':
         return renderVaccinations()
       case 'medications':
@@ -456,7 +476,7 @@ const HealthPage: React.FC = () => {
       case 'records':
         return renderRecords()
       default:
-        return renderOverview()
+        return <HealthDashboard />
     }
   }
 
@@ -478,7 +498,10 @@ const HealthPage: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-earth-200">
         <div className="max-w-md mx-auto px-4 py-4">
-          <h2 className="text-2xl font-display font-bold text-earth-900">Health Dashboard</h2>
+          <div className="flex items-center justify-center">
+            <Logo size="md" showText={false} />
+            <h2 className="text-2xl font-display font-bold text-earth-900 ml-3">Health Dashboard</h2>
+          </div>
         </div>
       </div>
 
@@ -491,23 +514,44 @@ const HealthPage: React.FC = () => {
               const isActive = activeTab === tab.id
               
               return (
-                <button
+                <motion.button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all duration-300 ${
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setActiveTab(tab.id as any)
+                    setSearchTerm('') // Clear search when changing tabs
+                  }}
+                  className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold whitespace-nowrap border-b-3 transition-all duration-300 rounded-t-xl ${
                     isActive
-                      ? 'border-orange-500 text-orange-600 font-body'
-                      : 'border-transparent text-earth-500 hover:text-earth-700 hover:border-earth-300 font-body'
+                      ? 'border-orange-500 text-orange-600 bg-orange-50 shadow-lg font-body'
+                      : 'border-transparent text-earth-500 hover:text-earth-700 hover:border-earth-300 hover:bg-earth-50 font-body'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-earth-500'}`} />
                   {tab.label}
-                </button>
+                </motion.button>
               )
             })}
           </div>
         </div>
       </div>
+
+      {/* Search Bar - only for data tabs */}
+      {['vaccinations', 'medications', 'appointments', 'records'].includes(activeTab) && (
+        <div className="max-w-md mx-auto px-4 pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-teal-500" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-sm border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 font-body"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="max-w-md mx-auto px-4 py-6">

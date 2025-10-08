@@ -59,9 +59,11 @@ export const useOnboarding = () => {
   useEffect(() => {
     if (!isLoading) {
       try {
+        console.log('💾 Saving onboarding data to localStorage:', onboardingData)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(onboardingData))
+        console.log('✅ Successfully saved to localStorage')
       } catch (error) {
-        console.error('Error saving onboarding data:', error)
+        console.error('❌ Error saving onboarding data:', error)
       }
     }
   }, [onboardingData, isLoading])
@@ -74,11 +76,16 @@ export const useOnboarding = () => {
   }
 
   const completeOnboarding = () => {
-    setOnboardingData(prev => ({
-      ...prev,
-      isCompleted: true,
-      completedAt: new Date().toISOString()
-    }))
+    console.log('🔧 completeOnboarding called - setting isCompleted to true')
+    setOnboardingData(prev => {
+      const updated = {
+        ...prev,
+        isCompleted: true,
+        completedAt: new Date().toISOString()
+      }
+      console.log('📝 Updated onboarding data:', updated)
+      return updated
+    })
   }
 
   const resetOnboarding = () => {

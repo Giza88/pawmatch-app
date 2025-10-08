@@ -36,7 +36,6 @@ const CreateVaccinationForm: React.FC<CreateVaccinationFormProps> = ({ isOpen, o
     
     try {
       const newVaccination = {
-        id: Date.now().toString(),
         name: formData.name,
         dateGiven: formData.date,
         nextDueDate: formData.nextDueDate || '',
@@ -46,7 +45,7 @@ const CreateVaccinationForm: React.FC<CreateVaccinationFormProps> = ({ isOpen, o
         notes: formData.notes
       }
       
-      await addVaccination(newVaccination)
+      addVaccination(newVaccination)
       setFormData({
         name: '',
         date: '',

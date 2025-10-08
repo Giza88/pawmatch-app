@@ -1,0 +1,17 @@
+{
+  "name": "Pawmatch™",
+  "short_name": "Pawmatch™",
+  "description": "Find perfect playmates for your dog with Pawmatch™ - the ultimate dog matching app",
+  "icons": [
+    {
+      "src": "/paw match logo.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#14b8a6",
+  "background_color": "#f0fdfa",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

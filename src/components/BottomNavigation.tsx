@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Dog, Calendar, MessageCircle, Heart, Navigation, User } from 'lucide-react'
+import { Dog, Calendar, MessageCircle, Heart, Navigation, User, Heart as HeartIcon } from 'lucide-react'
 
 const BottomNavigation: React.FC = () => {
   const location = useLocation()
@@ -9,8 +9,14 @@ const BottomNavigation: React.FC = () => {
     {
       path: '/',
       icon: Dog,
-      label: 'Match',
+            label: 'Match',
       color: 'text-primary-600'
+    },
+    {
+      path: '/matches',
+      icon: HeartIcon,
+            label: 'Matches',
+      color: 'text-gray-600'
     },
     {
       path: '/events',
@@ -28,12 +34,6 @@ const BottomNavigation: React.FC = () => {
       path: '/health',
       icon: Heart,
       label: 'Health',
-      color: 'text-gray-600'
-    },
-    {
-      path: '/gps-tracking',
-      icon: Navigation,
-      label: 'GPS',
       color: 'text-gray-600'
     },
     {

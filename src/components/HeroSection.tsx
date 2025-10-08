@@ -55,12 +55,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             transition={{ duration: 0.8, delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
           >
-            <button className="group bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full font-body font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center gap-3">
-              Start Matching
+            <button 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="group bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full font-body font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center gap-3"
+            >
+                 Start Matching
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             
-            <button className="group bg-white/20 hover:bg-white/30 text-white px-8 py-4 rounded-full font-body font-semibold text-lg transition-all duration-300 transform hover:scale-105 backdrop-blur-sm border border-white/30 flex items-center gap-3">
+            <button 
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+              className="group bg-white/20 hover:bg-white/30 text-white px-8 py-4 rounded-full font-body font-semibold text-lg transition-all duration-300 transform hover:scale-105 backdrop-blur-sm border border-white/30 flex items-center gap-3"
+            >
               Learn More
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -79,7 +85,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   <Heart className="w-8 h-8 text-orange-400" />
                 </div>
                 <div className="text-3xl font-display font-bold text-white mb-2">2,500+</div>
-                <div className="text-white/80 font-body">Happy Matches</div>
+                   <div className="text-white/80 font-body">Happy Matches</div>
               </div>
               
               <div className="text-center">
