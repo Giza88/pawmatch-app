@@ -7,10 +7,23 @@ import { useOnboarding } from '../hooks/useOnboarding'
 import OnboardingDataViewer from '../components/OnboardingDataViewer'
 import Logo from '../components/Logo'
 import { getNotificationSettings, updateNotificationSettings, requestNotificationPermission, testNotification } from '../utils/notifications'
+import DebugInfo from '../components/DebugInfo'
 
 const ProfilePage: React.FC = () => {
-  const { profile, updateProfile, updateAvatar, updateDogPhoto, updatePreferences, signOut } = useProfile()
+  const { profile, isLoading, updateProfile, updateAvatar, updateDogPhoto, updatePreferences, signOut } = useProfile()
   const { onboardingData, resetOnboarding } = useOnboarding()
+  
+  // Debug logging
+  console.log('ProfilePage - Current profile:', profile)
+  console.log('ProfilePage - Is loading:', isLoading)
+  console.log('ProfilePage - Onboarding data:', onboardingData)
+  
+  // Monitor profile changes
+  React.useEffect(() => {
+    console.log('ProfilePage - Profile changed:', profile)
+    console.log('ProfilePage - Profile name:', profile.name)
+    console.log('ProfilePage - Profile email:', profile.email)
+  }, [profile])
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPhotos, setIsChangingPhotos] = useState(false)
   const [isChangingPreferences, setIsChangingPreferences] = useState(false)
@@ -43,25 +56,46 @@ const ProfilePage: React.FC = () => {
     })
   }, [profile])
 
-  // Pre-populate profile with onboarding data if available
-  React.useEffect(() => {
-    if (onboardingData.isCompleted && onboardingData.fullName) {
-      updateProfile({
-        name: onboardingData.fullName,
-        email: onboardingData.email,
-        phone: onboardingData.phone,
-        dogName: onboardingData.dogName,
-        dogBreed: onboardingData.breed,
-        dogBio: `A ${onboardingData.age} year old ${onboardingData.size} ${onboardingData.breed} who loves adventures! 🐾`
-      })
-    }
-  }, [onboardingData, updateProfile])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Simple logging for debugging
+  React.useEffect(() => {
+    console.log('ProfilePage - Profile loaded:', profile)
+    console.log('ProfilePage - Profile name:', profile.name)
+    console.log('ProfilePage - Profile email:', profile.email)
+  }, [profile])
+
+  // Get real stats from localStorage or default to 0 for new profiles
+  const getRealStats = () => {
+    try {
+      const connections = localStorage.getItem('dogConnections')
+      const events = localStorage.getItem('events')
+      
+      console.log('ProfilePage - dogConnections in localStorage:', connections)
+      console.log('ProfilePage - events in localStorage:', events)
+      
+      const matchesCount = connections ? JSON.parse(connections).length : 0
+      const eventsCount = events ? JSON.parse(events).length : 0
+      
+      console.log('ProfilePage - Calculated stats:', { matches: matchesCount, events: eventsCount, checkIns: 0 })
+      
+      return {
+        matches: matchesCount,
+        events: eventsCount,
+        checkIns: 0 // We don't have check-ins implemented yet, so always 0
+      }
+    } catch (error) {
+      console.error('Error getting stats:', error)
+      return { matches: 0, events: 0, checkIns: 0 }
+    }
+  }
+
+  const realStats = getRealStats()
+  
   const stats = [
-    { label: 'Matches', value: '24', icon: Heart, color: 'text-orange-500' },
-    { label: 'Events', value: '12', icon: Calendar, color: 'text-teal-500' },
-    { label: 'Check-ins', value: '156', icon: MapPin, color: 'text-nature-500' }
+    { label: 'Matches', value: realStats.matches.toString(), icon: Heart, color: 'text-orange-500' },
+    { label: 'Events', value: realStats.events.toString(), icon: Calendar, color: 'text-teal-500' },
+    { label: 'Check-ins', value: realStats.checkIns.toString(), icon: MapPin, color: 'text-nature-500' }
   ]
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -93,16 +127,20 @@ const ProfilePage: React.FC = () => {
 
   const handlePhotoChange = async (type: 'avatar' | 'dogPhoto', file: File) => {
     try {
-      // Create a URL for the selected file
-      const photoURL = URL.createObjectURL(file)
-      
-      if (type === 'avatar') {
-        await updateAvatar(photoURL)
-      } else {
-        await updateDogPhoto(photoURL)
+      // Convert file to Base64 string for persistence
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64String = reader.result as string
+        
+        if (type === 'avatar') {
+          await updateAvatar(base64String)
+        } else {
+          await updateDogPhoto(base64String)
+        }
+        setIsChangingPhotos(false)
+        console.log(`✅ ${type} photo updated successfully with Base64`)
       }
-      setIsChangingPhotos(false)
-      console.log(`✅ ${type} photo updated successfully`)
+      reader.readAsDataURL(file)
     } catch (error) {
       console.error('Error updating photo:', error)
     }
@@ -154,6 +192,98 @@ const ProfilePage: React.FC = () => {
     }
   }
 
+  // Function to reset profile system for testing (DEV ONLY)
+  const handleResetProfileSystem = () => {
+    if (confirm('Are you sure you want to reset the entire profile system? This will clear all user data and you\'ll need to go through onboarding again.')) {
+      // Clear all localStorage data
+      localStorage.removeItem('userProfile')
+      localStorage.removeItem('pawfect-match-onboarding')
+      localStorage.removeItem('dogConnections')
+      localStorage.removeItem('dogSkipped')
+      localStorage.removeItem('dogPreferences')
+      localStorage.removeItem('events')
+      localStorage.removeItem('communityPosts')
+      localStorage.removeItem('notificationSettings')
+      
+      console.log('🔄 Profile system reset - all data cleared')
+      console.log('🔄 Refreshing page to start fresh...')
+      
+      // Force reload
+      window.location.reload()
+    }
+  }
+
+  // Function to clear just the match data while keeping profile
+  const handleClearMatchData = () => {
+    if (confirm('Clear all match data (connections, skipped dogs, preferences)? This will reset your matches to 0.')) {
+      localStorage.removeItem('dogConnections')
+      localStorage.removeItem('dogSkipped')
+      localStorage.removeItem('dogPreferences')
+      console.log('🔄 Match data cleared - refreshing to see changes')
+      window.location.reload()
+    }
+  }
+
+  // Function to fix onboarding completion and reload profile
+  const handleFixOnboardingAndReload = () => {
+    console.log('🔧 Fixing onboarding completion status and reloading profile...')
+    
+    // Get onboarding data
+    const onboardingData = localStorage.getItem('pawfect-match-onboarding')
+    if (onboardingData) {
+      try {
+        const parsed = JSON.parse(onboardingData)
+        console.log('Current onboarding data:', parsed)
+        
+        // Fix the isCompleted flag
+        parsed.isCompleted = true
+        parsed.completedAt = new Date().toISOString()
+        
+        // Save the fixed onboarding data
+        localStorage.setItem('pawfect-match-onboarding', JSON.stringify(parsed))
+        console.log('✅ Fixed onboarding data:', parsed)
+        
+        // Clear old match data
+        localStorage.removeItem('dogConnections')
+        localStorage.removeItem('dogSkipped')
+        localStorage.removeItem('dogPreferences')
+        
+          // Create new profile from fixed onboarding data
+          // Fix: Use dogPhoto as avatar since that's what the user uploaded during onboarding
+          const newProfile = {
+            id: 'user-1',
+            name: parsed.fullName,
+            email: parsed.email || '',
+            phone: parsed.phone || '',
+            location: parsed.location || 'Your Location',
+            memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            avatar: parsed.profilePhoto || parsed.dogPhoto || '', // Use dogPhoto as fallback for avatar
+            dogPhoto: '', // Clear dog photo since user uploaded their own photo
+            dogName: parsed.dogName || '',
+            dogBreed: parsed.breed || '',
+            dogBio: parsed.dogName ? `Meet ${parsed.dogName}, a ${parsed.age || 'young'}-year-old ${parsed.breed || 'lovable dog'}!` : '',
+            preferences: {
+              notifications: true,
+              locationSharing: true,
+              profileVisibility: 'public'
+            }
+          }
+        
+        // Save the new profile
+        localStorage.setItem('userProfile', JSON.stringify(newProfile))
+        console.log('✅ Profile created from fixed onboarding data:', newProfile)
+        
+        // Force page refresh
+        window.location.reload()
+      } catch (error) {
+        console.error('Error fixing onboarding data:', error)
+        alert('Error fixing onboarding data!')
+      }
+    } else {
+      alert('No onboarding data found!')
+    }
+  }
+
   const handleNotificationSettingChange = (key: keyof typeof notificationSettings, value: boolean) => {
     const newSettings = { ...notificationSettings, [key]: value }
     setNotificationSettings(newSettings)
@@ -170,18 +300,41 @@ const ProfilePage: React.FC = () => {
     }
   }
 
+  const handleResetOnboarding = () => {
+    if (confirm('Reset onboarding data? This will take you back to the onboarding flow.')) {
+      // Reset onboarding data
+      const onboardingData = localStorage.getItem('pawfect-match-onboarding')
+      if (onboardingData) {
+        try {
+          const parsed = JSON.parse(onboardingData)
+          parsed.isCompleted = false
+          delete parsed.completedAt
+          localStorage.setItem('pawfect-match-onboarding', JSON.stringify(parsed))
+          console.log('🔄 Onboarding reset - refreshing to show onboarding flow')
+          window.location.reload()
+        } catch (error) {
+          console.error('Error resetting onboarding:', error)
+        }
+      }
+    }
+  }
+
   const menuItems = [
     { icon: User, label: 'Edit Profile', action: () => setIsEditing(true) },
     { icon: Camera, label: 'Change Photos', action: () => setIsChangingPhotos(true) },
     { icon: Settings, label: 'Preferences', action: () => setIsChangingPreferences(true) },
     { icon: Shield, label: 'Privacy', action: () => setIsChangingPrivacy(true) },
-    { icon: RotateCcw, label: 'Reset Onboarding', action: () => setShowResetOnboarding(true) },
+    { icon: CheckCircle, label: 'Fix Onboarding & Reload (DEV)', action: handleFixOnboardingAndReload },
+    { icon: RotateCcw, label: 'Clear Match Data', action: handleClearMatchData },
+    { icon: RotateCcw, label: 'Reset Onboarding', action: handleResetOnboarding },
     { icon: CheckCircle, label: 'View Onboarding Data', action: () => setShowOnboardingData(true) },
+    { icon: RotateCcw, label: 'Reset Profile System (DEV)', action: handleResetProfileSystem },
     { icon: LogOut, label: 'Sign Out', action: handleSignOut }
   ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+      <DebugInfo />
       {/* Hero Section with Dog Using Phone */}
       <div className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-orange-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 via-teal-800/70 to-orange-600/60" />
@@ -214,6 +367,16 @@ const ProfilePage: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-4"></div>
+            <p className="text-earth-600">Loading profile...</p>
+          </div>
+        )}
+        
+        {!isLoading && (
+          <>
         {/* Profile Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -223,11 +386,17 @@ const ProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="text-center mb-6">
             <div className="relative inline-block mb-4">
-              <img
-                src={profile.avatar}
-                alt={profile.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt={profile.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-teal-100 flex items-center justify-center">
+                  <User className="w-12 h-12 text-teal-600" />
+                </div>
+              )}
               <button 
                 onClick={() => setIsChangingPhotos(true)}
                 className="absolute bottom-0 right-0 w-8 h-8 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110"
@@ -329,18 +498,34 @@ const ProfilePage: React.FC = () => {
         >
           <h3 className="text-xl font-display font-bold text-earth-900 mb-4">Your Furry Friend</h3>
           <div className="relative">
-            <img
-              src={profile.dogPhoto}
-              alt="Dog using phone"
-              className="w-full h-48 object-cover rounded-xl border border-earth-200"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-earth-900/60 via-transparent to-transparent rounded-xl" />
-            <div className="absolute bottom-4 left-4 text-white">
-              <p className="font-body font-medium">{profile.dogName} the {profile.dogBreed}</p>
-              <p className="text-sm opacity-90">{profile.dogBio}</p>
-            </div>
+            {profile.dogPhoto ? (
+              <img
+                src={profile.dogPhoto}
+                alt="Dog using phone"
+                className="w-full h-48 object-cover rounded-xl border border-earth-200"
+              />
+            ) : (
+              <div className="w-full h-48 bg-teal-100 rounded-xl border border-earth-200 flex items-center justify-center">
+                <div className="text-center">
+                  <User className="w-16 h-16 text-teal-600 mx-auto mb-2" />
+                  <p className="text-teal-600 font-medium">No photo yet</p>
+                  <p className="text-teal-500 text-sm">Add your dog's photo</p>
+                </div>
+              </div>
+            )}
+            {profile.dogPhoto && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-earth-900/60 via-transparent to-transparent rounded-xl" />
+                <div className="absolute bottom-4 left-4 text-white">
+                  <p className="font-body font-medium">{profile.dogName} the {profile.dogBreed}</p>
+                  <p className="text-sm opacity-90">{profile.dogBio}</p>
+                </div>
+              </>
+            )}
           </div>
         </motion.div>
+          </>
+        )}
       </div>
 
       {/* Edit Profile Modal */}

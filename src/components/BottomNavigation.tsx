@@ -7,7 +7,7 @@ const BottomNavigation: React.FC = () => {
 
   const navItems = [
     {
-      path: '/',
+      path: '/discover',
       icon: Dog,
             label: 'Match',
       color: 'text-primary-600'

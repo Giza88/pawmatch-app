@@ -118,8 +118,8 @@ const MatchesPage: React.FC = () => {
         console.error('Failed to parse matches:', e)
       }
     }
-    // Fallback to mock data if no real matches
-    return mockMatches
+    // Return empty array for new profiles (no fallback to mock data)
+    return []
   })
   const [selectedMatch, setSelectedMatch] = useState<typeof mockMatches[0] | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -145,7 +145,7 @@ const MatchesPage: React.FC = () => {
               location: dog.location || 'Local Park'
             }
           }))
-          setMatches(updatedMatches.length > 0 ? updatedMatches : mockMatches)
+          setMatches(updatedMatches)
         } catch (e) {
           console.error('Failed to sync matches:', e)
         }

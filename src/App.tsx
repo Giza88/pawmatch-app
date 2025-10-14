@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import DiscoverPage from './pages/DiscoverPage'
 import EventsPage from './pages/EventsPage'
@@ -89,7 +89,8 @@ function App() {
                 <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
                   <div className="pb-20"> {/* Add padding bottom for bottom navigation */}
                     <Routes>
-                      <Route path="/" element={<DiscoverPage />} />
+                      <Route path="/" element={<Navigate to="/discover" replace />} />
+                      <Route path="/discover" element={<DiscoverPage />} />
                       <Route path="/matches" element={<MatchesPage />} />
                       <Route path="/chat/:conversationId" element={<ChatPage />} />
                       <Route path="/events" element={<EventsPage />} />

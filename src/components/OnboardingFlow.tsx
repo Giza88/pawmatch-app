@@ -30,11 +30,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Create a URL for the selected file
-      const photoURL = URL.createObjectURL(file)
-      setDogPhoto(photoURL)
-      // Store the photo URL in onboarding data
-      updateOnboardingData({ dogPhoto: photoURL })
+      // Convert file to Base64 string for persistence
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64String = reader.result as string
+        setDogPhoto(base64String)
+        // Store the Base64 string in onboarding data
+        updateOnboardingData({ dogPhoto: base64String })
+        console.log('📸 Photo converted to Base64 and saved')
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -65,16 +70,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       completeOnboarding()
       console.log('✅ Onboarding marked as completed')
       
-      // Check if it was actually marked as completed
+      // Wait a moment for the state to update and save to localStorage
       setTimeout(() => {
         console.log('🔍 Checking completion status after 100ms...')
         console.log('📊 Updated onboarding data:', onboardingData)
+        
+        // Call the completion callback after state is saved
+        console.log('📞 Calling onComplete callback...')
+        onComplete()
+        console.log('✅ onComplete callback called successfully')
       }, 100)
-      
-      // Call the completion callback
-      console.log('📞 Calling onComplete callback...')
-      onComplete()
-      console.log('✅ onComplete callback called successfully')
       
     } catch (error) {
       console.error('❌ Error creating account:', error)
@@ -86,8 +91,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     try {
       completeOnboarding()
       console.log('✅ Onboarding skipped successfully')
-      onComplete()
-      console.log('✅ onComplete callback called')
+      
+      // Wait a moment for the state to update and save to localStorage
+      setTimeout(() => {
+        console.log('📞 Calling onComplete callback after skip...')
+        onComplete()
+        console.log('✅ onComplete callback called')
+      }, 100)
     } catch (error) {
       console.error('❌ Error skipping onboarding:', error)
     }
