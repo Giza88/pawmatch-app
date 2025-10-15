@@ -517,7 +517,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         <div className="max-w-md mx-auto">
           <button
             onClick={currentStep === 4 ? handleCreateAccount : nextStep}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg text-lg"
+            className="btn-primary-teal btn-full text-lg"
           >
             {currentStep === 4 ? 'Create Account' : 'Continue'}
           </button>

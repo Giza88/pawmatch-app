@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, Bookmark, Share2, Plus, X, Send, ThumbsUp, Search } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, Share2, Plus, X, Send, ThumbsUp, Search, Edit3 } from 'lucide-react'
 import { useCommunity } from '../contexts/CommunityContext'
+import { useProfile } from '../contexts/ProfileContext'
 import CreatePostForm from '../components/CreatePostForm'
 import LoadingScreen from '../components/LoadingScreen'
 import TrendingPosts from '../components/TrendingPosts'
@@ -9,11 +10,14 @@ import Logo from '../components/Logo'
 import { sendCommunityNotification } from '../utils/notifications'
 
 const CommunityPage: React.FC = () => {
-  const { posts, likePost, isPostLiked, bookmarkPost, addComment, likeComment, deletePost } = useCommunity()
+  const { posts, likePost, isPostLiked, bookmarkPost, addComment, likeComment, isCommentLiked, deletePost, editComment, deleteComment } = useCommunity()
+  const { profile } = useProfile()
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [expandedPost, setExpandedPost] = useState<string | null>(null)
   const [commentText, setCommentText] = useState<{ [postId: string]: string }>({})
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editCommentText, setEditCommentText] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'comments'>('recent')
@@ -71,7 +75,7 @@ const CommunityPage: React.FC = () => {
     
     // Send notification to post author (in a real app, this would be handled by the backend)
     const post = posts.find(p => p.id === postId)
-    if (post && post.author !== 'You') {
+    if (post && post.author !== profile.name) {
       sendCommunityNotification('like', 'Someone', post.title)
     }
   }
@@ -99,19 +103,43 @@ const CommunityPage: React.FC = () => {
     if (!text) return
 
     addComment(postId, {
-      author: 'You',
-      authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      author: profile.name,
+      authorAvatar: profile.avatar,
       content: text
     })
 
     // Send notification to post author (in a real app, this would be handled by the backend)
     const post = posts.find(p => p.id === postId)
-    if (post && post.author !== 'You') {
+    if (post && post.author !== profile.name) {
       sendCommunityNotification('comment', 'Someone', post.title)
     }
 
     // Clear the comment input
     setCommentText(prev => ({ ...prev, [postId]: '' }))
+  }
+
+  const handleEditComment = (postId: string, commentId: string, currentContent: string) => {
+    setEditingCommentId(commentId)
+    setEditCommentText(currentContent)
+  }
+
+  const handleSaveEdit = (postId: string, commentId: string) => {
+    if (editCommentText.trim()) {
+      editComment(postId, commentId, editCommentText.trim())
+      setEditingCommentId(null)
+      setEditCommentText('')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null)
+    setEditCommentText('')
+  }
+
+  const handleDeleteComment = (postId: string, commentId: string) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      deleteComment(postId, commentId)
+    }
   }
 
   const handleLikeComment = (postId: string, commentId: string) => {
@@ -131,7 +159,7 @@ const CommunityPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-nature-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 via-teal-800/70 to-nature-600/60" />
@@ -159,9 +187,10 @@ const CommunityPage: React.FC = () => {
             </div>
             <button
               onClick={() => setShowCreatePost(true)}
-              className="w-12 h-12 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-lg"
+              className="btn-icon"
+              aria-label="Create new post"
             >
-              <Plus className="w-6 h-6" />
+              <Plus className="w-6 h-6 text-white" />
             </button>
           </div>
 
@@ -183,11 +212,7 @@ const CommunityPage: React.FC = () => {
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  selectedCategory === category.id
-                    ? `${category.color} text-white shadow-lg`
-                    : 'bg-white/60 text-earth-600 hover:bg-white/80'
-                }`}
+                className={selectedCategory === category.id ? 'btn-pill-active' : 'btn-pill-inactive'}
               >
                 {category.label}
               </button>
@@ -265,13 +290,14 @@ const CommunityPage: React.FC = () => {
                     </span>
                     
                     {/* Delete button - only show for user's own posts */}
-                    {post.author === 'You' && (
+                    {post.author === profile.name && (
                       <button
                         onClick={() => handleDelete(post.id)}
-                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                        className="btn-icon-sm"
                         title="Delete post"
+                        aria-label="Delete post"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-4 h-4 text-red-500" />
                       </button>
                     )}
                   </div>
@@ -370,31 +396,86 @@ const CommunityPage: React.FC = () => {
                     {/* Comments List */}
                     <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
                       {post.comments.length > 0 ? (
-                        post.comments.map((comment) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <img
-                              src={comment.authorAvatar}
-                              alt={comment.author}
-                              className="w-8 h-8 rounded-full object-cover border border-earth-200"
-                            />
-                            <div className="flex-1">
-                              <div className="bg-earth-50 rounded-lg p-3">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-medium text-earth-900 text-sm">{comment.author}</span>
-                                  <span className="text-xs text-earth-500">{formatTimeAgo(comment.timestamp)}</span>
+                        post.comments.map((comment) => {
+                          const isMyComment = comment.author === profile.name
+                          const isEditing = editingCommentId === comment.id
+                          
+                          return (
+                            <div key={comment.id} className="flex gap-3">
+                              <img
+                                src={comment.authorAvatar}
+                                alt={comment.author}
+                                className="w-8 h-8 rounded-full object-cover border border-earth-200"
+                              />
+                              <div className="flex-1">
+                                <div className="bg-earth-50 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-medium text-earth-900 text-sm">{comment.author}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-earth-500">{formatTimeAgo(comment.timestamp)}</span>
+                                      {isMyComment && (
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            onClick={() => handleEditComment(post.id, comment.id, comment.content)}
+                                            className="p-1 text-earth-500 hover:text-teal-600 rounded"
+                                            aria-label="Edit comment"
+                                          >
+                                            <Edit3 className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteComment(post.id, comment.id)}
+                                            className="p-1 text-earth-500 hover:text-red-600 rounded"
+                                            aria-label="Delete comment"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {isEditing ? (
+                                    <div className="space-y-2">
+                                      <input
+                                        type="text"
+                                        value={editCommentText}
+                                        onChange={(e) => setEditCommentText(e.target.value)}
+                                        className="w-full px-2 py-1 border border-earth-200 rounded text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                        autoFocus
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleSaveEdit(post.id, comment.id)}
+                                          className="px-2 py-1 bg-teal-500 text-white text-xs rounded hover:bg-teal-600"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={handleCancelEdit}
+                                          className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-earth-700 text-sm">{comment.content}</p>
+                                  )}
                                 </div>
-                                <p className="text-earth-700 text-sm">{comment.content}</p>
+                                <button
+                                  onClick={() => handleLikeComment(post.id, comment.id)}
+                                  className={`flex items-center gap-1 text-xs mt-1 transition-colors ${
+                                    isCommentLiked(post.id, comment.id)
+                                      ? 'text-red-500 hover:text-red-600'
+                                      : 'text-earth-500 hover:text-teal-600'
+                                  }`}
+                                >
+                                  <ThumbsUp className={`w-3 h-3 ${isCommentLiked(post.id, comment.id) ? 'fill-red-500' : ''}`} />
+                                  <span>{comment.likes}</span>
+                                </button>
                               </div>
-                              <button
-                                onClick={() => handleLikeComment(post.id, comment.id)}
-                                className="flex items-center gap-1 text-xs text-earth-500 hover:text-teal-600 mt-1"
-                              >
-                                <ThumbsUp className="w-3 h-3" />
-                                <span>{comment.likes}</span>
-                              </button>
                             </div>
-                          </div>
-                        ))
+                          )
+                        })
                       ) : (
                         <p className="text-center text-earth-500 text-sm py-4">No comments yet. Be the first to comment!</p>
                       )}

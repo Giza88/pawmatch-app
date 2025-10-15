@@ -87,7 +87,7 @@ function App() {
               <ProfileProvider>
                 <Router>
                 <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
-                  <div className="pb-20"> {/* Add padding bottom for bottom navigation */}
+                  <div className="pb-28 sm:pb-24"> {/* Add more padding bottom for bottom navigation on mobile */}
                     <Routes>
                       <Route path="/" element={<Navigate to="/discover" replace />} />
                       <Route path="/discover" element={<DiscoverPage />} />

@@ -36,15 +36,31 @@ const mockUsers = {
 const ChatPage: React.FC = () => {
   const navigate = useNavigate()
   const { conversationId } = useParams<{ conversationId: string }>()
-  const { conversations, messages, sendMessage, markAsRead } = useChat()
+  const { conversations, messages, sendMessage, markAsRead, createConversation } = useChat()
   const [messageText, setMessageText] = useState('')
   const [showOptions, setShowOptions] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const conversation = conversations.find(c => c.id === conversationId)
-  const conversationMessages = conversationId ? messages[conversationId] || [] : []
-  const otherParticipant = conversation?.participants.find(p => p !== 'user-1') || ''
-  const otherUser = mockUsers[otherParticipant as keyof typeof mockUsers]
+  let conversation = conversations.find(c => c.id === conversationId)
+  let conversationMessages = conversationId ? messages[conversationId] || [] : []
+  let otherParticipant = conversation?.participants.find(p => p !== 'user-1') || ''
+  let otherUser = mockUsers[otherParticipant as keyof typeof mockUsers]
+
+  // If conversation doesn't exist, create it dynamically
+  useEffect(() => {
+    if (conversationId && !conversation) {
+      // Extract dog ID from conversation ID (e.g., "conv-4" -> "4")
+      const dogId = conversationId.replace('conv-', '')
+      
+      // Create a new conversation for this dog
+      createConversation(['user-1', `user-${dogId}`])
+      
+      // Update local variables
+      conversation = conversations.find(c => c.id === conversationId)
+      otherParticipant = `user-${dogId}`
+      otherUser = mockUsers[otherParticipant as keyof typeof mockUsers]
+    }
+  }, [conversationId, conversation, createConversation, conversations])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -93,7 +109,7 @@ const ChatPage: React.FC = () => {
           <p className="text-earth-500 font-body mb-6">This conversation may have been deleted or doesn't exist.</p>
           <button
             onClick={() => navigate('/matches')}
-            className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+            className="btn-primary-teal"
           >
             Back to Matches
           </button>

@@ -26,6 +26,7 @@ export interface Comment {
   content: string
   timestamp: Date
   likes: number
+  likedBy: string[] // Array of user IDs who liked this comment
 }
 
 export interface CommunityPost {
@@ -50,8 +51,11 @@ interface CommunityContextType {
   likePost: (postId: string) => void
   isPostLiked: (postId: string) => boolean
   bookmarkPost: (postId: string) => void
-  addComment: (postId: string, comment: Omit<Comment, 'id' | 'postId' | 'timestamp' | 'likes'>) => void
+  addComment: (postId: string, comment: Omit<Comment, 'id' | 'postId' | 'timestamp' | 'likes' | 'likedBy'>) => void
+  editComment: (postId: string, commentId: string, newContent: string) => void
+  deleteComment: (postId: string, commentId: string) => void
   likeComment: (postId: string, commentId: string) => void
+  isCommentLiked: (postId: string, commentId: string) => boolean
   getPostsByCategory: (category: string) => CommunityPost[]
   getTrendingPosts: () => CommunityPost[]
 }
@@ -409,7 +413,7 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
   ]
   })
 
-  const addPost = (post: Omit<CommunityPost, 'id' | 'timestamp' | 'likes' | 'comments' | 'isBookmarked'>) => {
+  const addPost = (post: Omit<CommunityPost, 'id' | 'timestamp' | 'likes' | 'likedBy' | 'comments' | 'isBookmarked'>) => {
     console.log('Creating new community post:', post)
     const newPost: CommunityPost = {
       ...post,
@@ -506,13 +510,14 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
     })
   }
 
-  const addComment = (postId: string, comment: Omit<Comment, 'id' | 'postId' | 'timestamp' | 'likes'>) => {
+  const addComment = (postId: string, comment: Omit<Comment, 'id' | 'postId' | 'timestamp' | 'likes' | 'likedBy'>) => {
     const newComment: Comment = {
       ...comment,
       id: Date.now().toString(),
       postId,
       timestamp: new Date(),
-      likes: 0
+      likes: 0,
+      likedBy: []
     }
     
     setPosts(prev => {
@@ -527,16 +532,35 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
   }
 
   const likeComment = (postId: string, commentId: string) => {
+    const currentUserId = 'current-user' // In a real app, this would come from auth context
+    
     setPosts(prev => {
       const updated = prev.map(post => 
         post.id === postId 
           ? {
               ...post,
-              comments: post.comments.map(comment =>
-                comment.id === commentId 
-                  ? { ...comment, likes: comment.likes + 1 }
-                  : comment
-              )
+              comments: post.comments.map(comment => {
+                if (comment.id === commentId) {
+                  const likedBy = comment.likedBy || []
+                  const hasLiked = likedBy.includes(currentUserId)
+                  
+                  // Toggle like: if already liked, unlike; if not liked, like
+                  if (hasLiked) {
+                    return {
+                      ...comment,
+                      likes: Math.max(0, comment.likes - 1),
+                      likedBy: likedBy.filter(id => id !== currentUserId)
+                    }
+                  } else {
+                    return {
+                      ...comment,
+                      likes: comment.likes + 1,
+                      likedBy: [...likedBy, currentUserId]
+                    }
+                  }
+                }
+                return comment
+              })
             }
           : post
       )
@@ -556,6 +580,48 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
       .slice(0, 5)
   }
 
+  const isCommentLiked = (postId: string, commentId: string) => {
+    const currentUserId = 'current-user'
+    const post = posts.find(p => p.id === postId)
+    if (!post) return false
+    const comment = post.comments.find(c => c.id === commentId)
+    return comment && comment.likedBy ? comment.likedBy.includes(currentUserId) : false
+  }
+
+  const editComment = (postId: string, commentId: string, newContent: string) => {
+    setPosts(prev => {
+      const updated = prev.map(post => 
+        post.id === postId 
+          ? {
+              ...post,
+              comments: post.comments.map(comment =>
+                comment.id === commentId
+                  ? { ...comment, content: newContent }
+                  : comment
+              )
+            }
+          : post
+      )
+      localStorage.setItem('communityPosts', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const deleteComment = (postId: string, commentId: string) => {
+    setPosts(prev => {
+      const updated = prev.map(post => 
+        post.id === postId 
+          ? {
+              ...post,
+              comments: post.comments.filter(comment => comment.id !== commentId)
+            }
+          : post
+      )
+      localStorage.setItem('communityPosts', JSON.stringify(updated))
+      return updated
+    })
+  }
+
   const value: CommunityContextType = {
     posts,
     addPost,
@@ -564,7 +630,10 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
     isPostLiked,
     bookmarkPost,
     addComment,
+    editComment,
+    deleteComment,
     likeComment,
+    isCommentLiked,
     getPostsByCategory,
     getTrendingPosts
   }

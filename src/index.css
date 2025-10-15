@@ -317,23 +317,115 @@
   }
 }
 
-/* Custom Component Styles */
+/* Custom Component Styles - Enhanced Button System */
 @layer components {
+  /* Base button styles */
+  .btn {
+    @apply font-body font-semibold transition-all duration-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95;
+  }
+
+  /* Size variants */
+  .btn-sm {
+    @apply py-2 px-4 text-sm;
+  }
+
+  .btn-md {
+    @apply py-3 px-6 text-base;
+  }
+
+  .btn-lg {
+    @apply py-4 px-8 text-lg;
+  }
+
+  /* Primary action buttons */
   .btn-primary {
-    @apply bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    @apply btn btn-md bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white transform hover:scale-105 hover:shadow-lg focus:ring-teal-500;
+  }
+
+  .btn-primary-teal {
+    @apply btn btn-md bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white transform hover:scale-105 hover:shadow-lg focus:ring-teal-500;
+  }
+
+  .btn-primary-orange {
+    @apply btn btn-md bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white transform hover:scale-105 hover:shadow-lg focus:ring-orange-500;
   }
   
+  /* Secondary buttons */
   .btn-secondary {
-    @apply bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    @apply btn btn-md bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white transform hover:scale-105 hover:shadow-lg focus:ring-earth-500;
+  }
+
+  .btn-secondary-gray {
+    @apply btn btn-md bg-gray-200 hover:bg-gray-300 text-gray-700 transform hover:scale-105 focus:ring-gray-400;
   }
   
+  /* Outline buttons */
   .btn-outline {
-    @apply border-2 border-teal-500 text-teal-600 hover:bg-teal-500 hover:text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105;
+    @apply btn btn-md border-2 border-teal-500 text-teal-600 hover:bg-teal-500 hover:text-white transform hover:scale-105 focus:ring-teal-500;
+  }
+
+  .btn-outline-orange {
+    @apply btn btn-md border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white transform hover:scale-105 focus:ring-orange-500;
+  }
+
+  /* Danger/destructive buttons */
+  .btn-danger {
+    @apply btn btn-md bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transform hover:scale-105 hover:shadow-lg focus:ring-red-500;
+  }
+
+  /* Ghost/minimal buttons */
+  .btn-ghost {
+    @apply btn btn-md bg-transparent hover:bg-earth-100 text-earth-700 focus:ring-earth-400;
+  }
+
+  /* Icon-only buttons */
+  .btn-icon {
+    @apply p-3 bg-teal-500 hover:bg-teal-600 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:ring-2 focus:ring-teal-500 focus:ring-offset-0;
+  }
+
+  .btn-icon-sm {
+    @apply p-2 hover:bg-teal-100 rounded-full transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center focus:ring-2 focus:ring-teal-500 focus:ring-offset-0;
+  }
+
+  /* Pill/toggle buttons */
+  .btn-pill {
+    @apply px-4 py-2 rounded-full text-sm font-body transition-all focus:ring-2 focus:ring-teal-500 focus:ring-offset-0;
+  }
+
+  .btn-pill-active {
+    @apply btn-pill bg-teal-500 text-white hover:bg-teal-600;
+  }
+
+  .btn-pill-inactive {
+    @apply btn-pill bg-earth-100 text-earth-600 hover:bg-earth-200;
+  }
+
+  .btn-pill-orange-active {
+    @apply btn-pill bg-orange-500 text-white hover:bg-orange-600;
+  }
+
+  /* Full-width modifier */
+  .btn-full {
+    @apply w-full flex items-center justify-center;
+  }
+
+  /* Icon spacing modifiers */
+  .btn-icon-left {
+    @apply flex items-center gap-2;
+  }
+
+  .btn-icon-right {
+    @apply flex items-center gap-2 flex-row-reverse;
   }
 }
 
 /* Line Clamp Utilities */
 @layer utilities {
+  /* Safe area padding for notched devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;

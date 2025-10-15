@@ -185,7 +185,7 @@ const HealthPage: React.FC = () => {
             setFormType('vaccination')
             setShowAddForm(true)
           }}
-          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+          className="btn-primary btn-icon-left"
         >
           <Plus className="w-5 h-5" />
           Add Vaccination
@@ -262,7 +262,7 @@ const HealthPage: React.FC = () => {
             setFormType('medication')
             setShowAddForm(true)
           }}
-          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+          className="btn-primary btn-icon-left"
         >
           <Plus className="w-5 h-5" />
           Add Medication
@@ -335,7 +335,7 @@ const HealthPage: React.FC = () => {
             setFormType('appointment')
             setShowAddForm(true)
           }}
-          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+          className="btn-primary btn-icon-left"
         >
           <Plus className="w-5 h-5" />
           Schedule Appointment
@@ -415,7 +415,7 @@ const HealthPage: React.FC = () => {
             setFormType('record')
             setShowAddForm(true)
           }}
-          className="bg-gradient-to-r from-orange-500 to-teal-500 hover:from-orange-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+          className="btn-primary btn-icon-left"
         >
           <Plus className="w-5 h-5" />
           Add Record
@@ -481,7 +481,7 @@ const HealthPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-teal-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 via-orange-800/70 to-teal-600/60" />

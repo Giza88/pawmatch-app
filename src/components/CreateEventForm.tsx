@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, MapPin, Users, Clock, X } from 'lucide-react'
 import { useEvents } from '../contexts/EventsContext'
+import { useProfile } from '../contexts/ProfileContext'
 
 interface CreateEventFormProps {
   isOpen: boolean
@@ -10,6 +11,7 @@ interface CreateEventFormProps {
 
 const CreateEventForm: React.FC<CreateEventFormProps> = ({ isOpen, onClose }) => {
   const { createEvent } = useEvents()
+  const { profile } = useProfile()
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -42,11 +44,8 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ isOpen, onClose }) =>
         ...formData,
         date: new Date(`${formData.date}T${formData.time}`).toISOString(),
         createdAt: new Date().toISOString(),
-        organizer: {
-          id: 'current-user',
-          name: 'You',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-        },
+        organizer: profile.name,
+        organizerPhoto: profile.avatar,
         attendees: [],
         status: 'upcoming'
       }
@@ -88,12 +87,13 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ isOpen, onClose }) =>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-display font-bold text-earth-900">Create New Event</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-earth-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5 text-earth-600" />
-          </button>
+                <button
+                  onClick={onClose}
+                  className="btn-icon-sm"
+                  aria-label="Close form"
+                >
+                  <X className="w-5 h-5 text-earth-600" />
+                </button>
         </div>
 
         {/* Form */}
@@ -237,7 +237,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ isOpen, onClose }) =>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-earth-300 disabled:to-earth-400 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:transform-none disabled:cursor-not-allowed"
+            className="btn-primary-teal btn-full"
           >
             {isSubmitting ? 'Creating Event...' : 'Create Event'}
           </button>

@@ -30,11 +30,13 @@ interface SwipeInterfaceProps {
   onDislike: (dog: DogProfile) => void    // Callback when user passes on a dog
   onCurrentDogChange?: (index: number) => void  // Optional callback for current dog index
   onStartOver?: () => void     // Optional callback for start over functionality
+  onUndo?: (dog: DogProfile) => void  // Optional callback for undo action
 }
 
-const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislike, onCurrentDogChange, onStartOver }) => {
+const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislike, onCurrentDogChange, onStartOver, onUndo }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [, setSwipedDogs] = useState<Set<string>>(new Set())
+  const [swipeHistory, setSwipeHistory] = useState<Array<{dog: DogProfile, direction: 'left' | 'right'}>>([])
   const [showMatchAnimation, setShowMatchAnimation] = useState(false)
   const [showDislikeAnimation, setShowDislikeAnimation] = useState(false)
   const [lastSwipeDirection, setLastSwipeDirection] = useState<'left' | 'right' | null>(null)
@@ -48,6 +50,9 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
     if (!currentDog) return
 
     console.log(`Button clicked: ${direction === 'right' ? 'LIKE' : 'NOPE'} for ${currentDog.name}`)
+    
+    // Add to swipe history
+    setSwipeHistory(prev => [...prev, { dog: currentDog, direction }])
     
     setLastSwipeDirection(direction)
     setSwipedDogs(prev => new Set(prev).add(currentDog.id))
@@ -77,18 +82,33 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
   }, [currentIndex, dogs, onMatch, onDislike, onCurrentDogChange])
 
   const handleUndo = useCallback(() => {
-    if (currentIndex > 0) {
-      const previousDog = dogs[currentIndex - 1]
+    if (swipeHistory.length > 0) {
+      // Get the last swiped dog from history
+      const lastSwipe = swipeHistory[swipeHistory.length - 1]
+      
+      console.log(`↩️ Undoing ${lastSwipe.direction === 'right' ? 'LIKE' : 'PASS'} for ${lastSwipe.dog.name}`)
+      
+      // Notify parent to undo the match/dislike
+      if (onUndo) {
+        onUndo(lastSwipe.dog)
+      }
+      
+      // Remove from swipe history
+      setSwipeHistory(prev => prev.slice(0, -1))
+      
+      // Remove from swiped dogs
       setSwipedDogs(prev => {
         const newSet = new Set(prev)
-        newSet.delete(previousDog.id)
+        newSet.delete(lastSwipe.dog.id)
         return newSet
       })
-      const newIndex = currentIndex - 1
+      
+      // Go back one index
+      const newIndex = Math.max(0, currentIndex - 1)
       setCurrentIndex(newIndex)
       onCurrentDogChange?.(newIndex)
     }
-  }, [currentIndex, dogs, onCurrentDogChange])
+  }, [swipeHistory, currentIndex, onCurrentDogChange, onUndo])
 
   const currentDog = dogs[currentIndex]
   const hasMoreDogs = currentIndex < dogs.length
@@ -112,6 +132,7 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
               // Fallback: just reset the current interface
               setCurrentIndex(0)
               setSwipedDogs(new Set())
+              setSwipeHistory([])
               onCurrentDogChange?.(0)
             }
           }}
@@ -257,11 +278,11 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
         {/* Undo Button */}
         <motion.button
           onClick={handleUndo}
-          disabled={currentIndex === 0}
-          whileHover={currentIndex > 0 ? { scale: 1.1, rotate: -10 } : {}}
-          whileTap={currentIndex > 0 ? { scale: 0.95 } : {}}
+          disabled={swipeHistory.length === 0}
+          whileHover={swipeHistory.length > 0 ? { scale: 1.1, rotate: -10 } : {}}
+          whileTap={swipeHistory.length > 0 ? { scale: 0.95 } : {}}
           className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 ${
-            currentIndex === 0
+            swipeHistory.length === 0
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-200'
               : 'bg-white hover:border-blue-300 hover:shadow-blue-100 border-2 border-blue-200'
           }`}

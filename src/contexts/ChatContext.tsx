@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react'
 
 export interface ChatMessage {
   id: string
@@ -191,10 +191,10 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [messages, setMessages] = useState<{ [conversationId: string]: ChatMessage[] }>(mockMessages)
   const [activeConversation, setActiveConversation] = useState<string | null>(null)
 
-  const sendMessage = (conversationId: string, content: string, type: 'text' | 'image' | 'location' = 'text') => {
+  const sendMessage = useCallback((conversationId: string, content: string, type: 'text' | 'image' | 'location' = 'text') => {
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      senderId: 'user-1', // Current user
+      senderId: 'user-1',
       receiverId: conversations.find(c => c.id === conversationId)?.participants.find(p => p !== 'user-1') || '',
       content,
       timestamp: new Date().toISOString(),
@@ -202,13 +202,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       type
     }
 
-    // Add message to conversation
     setMessages(prev => ({
       ...prev,
       [conversationId]: [...(prev[conversationId] || []), newMessage]
     }))
 
-    // Update conversation with last message
     setConversations(prev => prev.map(conv => 
       conv.id === conversationId 
         ? { 
@@ -219,9 +217,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         : conv
     ))
-  }
+  }, [])
 
-  const markAsRead = (conversationId: string) => {
+  const markAsRead = useCallback((conversationId: string) => {
     setConversations(prev => prev.map(conv => 
       conv.id === conversationId 
         ? { ...conv, unreadCount: 0 }
@@ -234,15 +232,16 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         msg.receiverId === 'user-1' ? { ...msg, isRead: true } : msg
       )
     }))
-  }
+  }, [])
 
-  const createConversation = (participants: string[]): string => {
+  const createConversation = useCallback((participants: string[]): string => {
     const conversationId = `conv-${Date.now()}`
     const newConversation: ChatConversation = {
       id: conversationId,
       participants,
       unreadCount: 0,
       isActive: true,
+      lastMessage: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -251,7 +250,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setMessages(prev => ({ ...prev, [conversationId]: [] }))
 
     return conversationId
-  }
+  }, [])
 
   return (
     <ChatContext.Provider value={{

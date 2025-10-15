@@ -691,6 +691,35 @@ const DiscoverPage: React.FC = () => {
     console.log(`👎 Passed on ${dog.name} (Total skipped: ${skipped.length + 1})`)
   }
 
+  /**
+   * EVENT HANDLER: When user undoes their last swipe
+   * Removes the dog from either connections or skipped array
+   * @param dog - The dog profile to undo
+   */
+  const handleUndo = (dog: DogProfile) => {
+    // Check if dog was matched
+    const wasMatched = connections.some(connection => connection.id === dog.id)
+    if (wasMatched) {
+      setConnections(prev => {
+        const updated = prev.filter(connection => connection.id !== dog.id)
+        localStorage.setItem('dogConnections', JSON.stringify(updated))
+        console.log(`↩️ Removed ${dog.name} from matches`)
+        return updated
+      })
+    }
+    
+    // Check if dog was skipped
+    const wasSkipped = skipped.some(skippedDog => skippedDog.id === dog.id)
+    if (wasSkipped) {
+      setSkipped(prev => {
+        const updated = prev.filter(skippedDog => skippedDog.id !== dog.id)
+        localStorage.setItem('dogSkipped', JSON.stringify(updated))
+        console.log(`↩️ Removed ${dog.name} from skipped`)
+        return updated
+      })
+    }
+  }
+
   // Handler for Start Over button - shows modal with options
   const handleStartOver = () => {
     setShowStartOverModal(true)
@@ -746,7 +775,7 @@ const DiscoverPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
       {/* Notification Permission Banner */}
       <NotificationPermissionBanner />
       
@@ -767,7 +796,7 @@ const DiscoverPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setShowPreferencesModal(true)}
-                className="p-2 hover:bg-teal-100 rounded-full transition-colors"
+                className="btn-icon"
                 title="Filter options"
                 aria-label="Filter options"
               >
@@ -788,7 +817,7 @@ const DiscoverPage: React.FC = () => {
                     alert('Location services not supported by this browser.')
                   }
                 }}
-                className="p-2 hover:bg-teal-100 rounded-full transition-colors"
+                className="btn-icon"
                 title="Location settings"
                 aria-label="Location settings"
               >
@@ -818,7 +847,7 @@ const DiscoverPage: React.FC = () => {
                     alert('Notifications not supported by this browser.')
                   }
                 }}
-                className="p-2 hover:bg-teal-100 rounded-full transition-colors"
+                className="btn-icon"
                 title="Notifications"
                 aria-label="Notifications"
               >
@@ -852,6 +881,7 @@ const DiscoverPage: React.FC = () => {
           dogs={filteredDogs}
           onMatch={handleMatch}
           onDislike={handleDislike}
+          onUndo={handleUndo}
           onCurrentDogChange={setCurrentDogIndex}
           onStartOver={handleStartOver}
         />
@@ -860,7 +890,7 @@ const DiscoverPage: React.FC = () => {
         <div className="px-4 max-w-md mx-auto">
           <button 
             onClick={() => setShowPreferencesModal(true)}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
+            className="btn-primary-teal btn-full btn-icon-left"
           >
             <Filter className="w-5 h-5" />
             Update Preferences
@@ -916,7 +946,7 @@ const DiscoverPage: React.FC = () => {
         <div className="mt-8 space-y-3">
           <button 
             onClick={() => navigate('/matches')}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
+            className="btn-primary-orange btn-full btn-icon-left"
           >
             <Heart className="w-5 h-5" />
             View Matches
@@ -927,7 +957,7 @@ const DiscoverPage: React.FC = () => {
         <div className="mt-8">
           <button 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+            className="btn-primary-teal btn-full"
           >
                  Start Matching
           </button>
@@ -944,7 +974,8 @@ const DiscoverPage: React.FC = () => {
                 <h2 className="text-2xl font-display font-bold">Your Connections</h2>
                 <button 
                   onClick={() => setShowConnectionsModal(false)}
-                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                  className="btn-icon-sm"
+                  aria-label="Close connections modal"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -991,7 +1022,7 @@ const DiscoverPage: React.FC = () => {
             <div className="p-6 border-t border-earth-200">
               <button 
                 onClick={() => setShowConnectionsModal(false)}
-                className="w-full bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+                className="btn-secondary btn-full"
               >
                 Close
               </button>
@@ -1000,7 +1031,7 @@ const DiscoverPage: React.FC = () => {
                   setShowConnectionsModal(false)
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
-                className="w-full mt-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+                className="btn-primary-orange btn-full mt-3"
               >
                  Start Matching
               </button>
@@ -1019,7 +1050,8 @@ const DiscoverPage: React.FC = () => {
                 <h2 className="text-2xl font-display font-bold">Update Preferences</h2>
                 <button 
                   onClick={() => setShowPreferencesModal(false)}
-                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                  className="btn-icon-sm"
+                  aria-label="Close preferences modal"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1044,11 +1076,7 @@ const DiscoverPage: React.FC = () => {
                           : [...preferences.preferredSizes, size]
                         setPreferences((prev: any) => ({ ...prev, preferredSizes: newSizes }))
                       }}
-                      className={`px-4 py-2 rounded-full text-sm font-body transition-all ${
-                        preferences.preferredSizes.includes(size)
-                          ? 'bg-teal-500 text-white'
-                          : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
-                      }`}
+                      className={preferences.preferredSizes.includes(size) ? 'btn-pill-active' : 'btn-pill-inactive'}
                     >
                       {size}
                     </button>
@@ -1069,11 +1097,7 @@ const DiscoverPage: React.FC = () => {
                           : [...preferences.preferredEnergyLevels, level]
                         setPreferences((prev: any) => ({ ...prev, preferredEnergyLevels: newLevels }))
                       }}
-                      className={`px-4 py-2 rounded-full text-sm font-body transition-all ${
-                        preferences.preferredEnergyLevels.includes(level)
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
-                      }`}
+                      className={preferences.preferredEnergyLevels.includes(level) ? 'btn-pill-orange-active' : 'btn-pill-inactive'}
                     >
                       {level}
                     </button>
@@ -1148,7 +1172,7 @@ const DiscoverPage: React.FC = () => {
                   setShowSaveNotification(true)
                   setTimeout(() => setShowSaveNotification(false), 3000)
                 }}
-                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+                className="btn-primary-teal btn-full"
               >
                 Save Preferences
               </button>
@@ -1162,7 +1186,7 @@ const DiscoverPage: React.FC = () => {
                     preferredBreeds: []
                   })
                 }}
-                className="w-full mt-3 bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+                className="btn-secondary btn-full mt-3"
               >
                 Reset to Default
               </button>
@@ -1198,7 +1222,7 @@ const DiscoverPage: React.FC = () => {
             <div className="space-y-3 mb-6">
               <button
                 onClick={resetSwipePosition}
-                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-left"
+                className="btn-primary-teal btn-full text-left"
               >
                 <div className="font-semibold">Just Reset Position</div>
                 <div className="text-sm opacity-90">Keep all matches and skipped dogs, just go back to the first dog</div>
@@ -1206,7 +1230,7 @@ const DiscoverPage: React.FC = () => {
 
               <button
                 onClick={resetSkippedOnly}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-left"
+                className="btn-primary-teal btn-full text-left"
               >
                 <div className="font-semibold">Reset Skipped Dogs</div>
                 <div className="text-sm opacity-90">Keep matches, but allow re-swiping on dogs you passed</div>
@@ -1214,7 +1238,7 @@ const DiscoverPage: React.FC = () => {
 
               <button
                 onClick={resetAllData}
-                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-left"
+                className="btn-danger btn-full text-left"
               >
                 <div className="font-semibold">Reset Everything</div>
                 <div className="text-sm opacity-90">Clear all matches, skipped dogs, and reset preferences to default</div>
@@ -1223,7 +1247,7 @@ const DiscoverPage: React.FC = () => {
 
             <button
               onClick={() => setShowStartOverModal(false)}
-              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+              className="btn-secondary-gray btn-full"
             >
               Cancel
             </button>

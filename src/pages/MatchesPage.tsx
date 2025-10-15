@@ -184,9 +184,9 @@ const MatchesPage: React.FC = () => {
     if (conversationId) {
       navigate(`/chat/${conversationId}`)
     } else {
-      // Create new conversation if it doesn't exist
-      console.log(`Creating new conversation for ${match.name}`)
-      alert(`Chat feature coming soon! You'll be able to message ${match.owner.name} about ${match.name}.`)
+      // For other dogs, create a new conversation ID based on the dog's ID
+      const newConversationId = `conv-${match.id}`
+      navigate(`/chat/${newConversationId}`)
     }
   }
 
@@ -197,7 +197,7 @@ const MatchesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-teal-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 via-orange-800/70 to-teal-600/60" />
@@ -345,7 +345,7 @@ const MatchesPage: React.FC = () => {
             {!searchTerm && !filterOnline && (
               <button
                 onClick={() => navigate('/discover')}
-                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                className="btn-primary-teal"
               >
                      Start Matching
               </button>
@@ -378,7 +378,8 @@ const MatchesPage: React.FC = () => {
                 </h2>
                 <button
                   onClick={() => setSelectedMatch(null)}
-                  className="p-2 hover:bg-earth-100 rounded-full transition-colors"
+                  className="btn-icon-sm"
+                  aria-label="Close match details"
                 >
                   <X className="w-6 h-6 text-earth-600" />
                 </button>
@@ -450,7 +451,7 @@ const MatchesPage: React.FC = () => {
                     setSelectedMatch(null)
                     handleStartChat(selectedMatch)
                   }}
-                  className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  className="btn-primary-teal btn-full btn-icon-left"
                 >
                   <MessageCircle className="w-5 h-5" />
                   Start Chat
@@ -461,7 +462,7 @@ const MatchesPage: React.FC = () => {
                     setSelectedMatch(null)
                     handleCallOwner(selectedMatch)
                   }}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-body font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  className="btn-primary-orange btn-full btn-icon-left"
                 >
                   <Phone className="w-5 h-5" />
                   Call Owner

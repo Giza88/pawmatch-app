@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, MapPin, Users, Plus, Search, X, MessageCircle, Send, ThumbsUp } from 'lucide-react'
+import { Calendar, MapPin, Users, Plus, Search, X, MessageCircle, Send, ThumbsUp, Edit3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEvents } from '../contexts/EventsContext'
+import { useProfile } from '../contexts/ProfileContext'
 import CreateEventForm from '../components/CreateEventForm'
 import LoadingScreen from '../components/LoadingScreen'
 import Logo from '../components/Logo'
@@ -14,6 +15,7 @@ export interface EventComment {
   content: string
   timestamp: Date
   likes: number
+  likedBy: string[] // Array of user IDs who liked this comment
 }
 
 export interface DogEvent {
@@ -33,14 +35,18 @@ export interface DogEvent {
   isPublic: boolean
   coordinates?: { lat: number; lng: number }
   comments: EventComment[]
+  attendees?: string[] // Array of user IDs who have joined the event
 }
 
 const EventsPage: React.FC = () => {
-  const { events, joinEvent, leaveEvent, deleteEvent, addEventComment, likeEventComment } = useEvents()
+  const { events, joinEvent, leaveEvent, deleteEvent, addEventComment, editEventComment, deleteEventComment, likeEventComment, isEventCommentLiked } = useEvents()
+  const { profile } = useProfile()
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null)
   const [commentText, setCommentText] = useState<{ [eventId: string]: string }>({})
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editCommentText, setEditCommentText] = useState('')
 
   // Simulate loading time
   useEffect(() => {
@@ -78,8 +84,8 @@ const EventsPage: React.FC = () => {
     if (!text) return
 
     addEventComment(eventId, {
-      author: 'You',
-      authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      author: profile.name,
+      authorAvatar: profile.avatar,
       content: text
     })
 
@@ -92,6 +98,42 @@ const EventsPage: React.FC = () => {
    */
   const handleLikeComment = (eventId: string, commentId: string) => {
     likeEventComment(eventId, commentId)
+  }
+
+  /**
+   * EVENT HANDLER: Edit a comment
+   */
+  const handleEditComment = (_eventId: string, commentId: string, currentContent: string) => {
+    setEditingCommentId(commentId)
+    setEditCommentText(currentContent)
+  }
+
+  /**
+   * EVENT HANDLER: Save edited comment
+   */
+  const handleSaveEdit = (eventId: string, commentId: string) => {
+    if (editCommentText.trim()) {
+      editEventComment(eventId, commentId, editCommentText.trim())
+      setEditingCommentId(null)
+      setEditCommentText('')
+    }
+  }
+
+  /**
+   * EVENT HANDLER: Cancel editing
+   */
+  const handleCancelEdit = () => {
+    setEditingCommentId(null)
+    setEditCommentText('')
+  }
+
+  /**
+   * EVENT HANDLER: Delete a comment
+   */
+  const handleDeleteComment = (eventId: string, commentId: string) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      deleteEventComment(eventId, commentId)
+    }
   }
 
   if (isLoading) {
@@ -114,7 +156,7 @@ const EventsPage: React.FC = () => {
         case 'date':
           return new Date(a.date).getTime() - new Date(b.date).getTime()
         case 'attendees':
-          return (b.attendees || 0) - (a.attendees || 0)
+          return (b.attendees?.length || 0) - (a.attendees?.length || 0)
         case 'recent':
           return new Date(b.date).getTime() - new Date(a.date).getTime()
         default:
@@ -168,7 +210,7 @@ const EventsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-orange-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 via-teal-800/70 to-orange-600/60" />
@@ -190,7 +232,7 @@ const EventsPage: React.FC = () => {
             <h2 className="text-2xl font-display font-bold text-earth-900">Events</h2>
             <button 
               onClick={() => setShowCreateForm(true)}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white p-3 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+              className="btn-icon"
               title="Create new event"
               aria-label="Create new event"
             >
@@ -221,11 +263,7 @@ const EventsPage: React.FC = () => {
               <button
                 key={type}
                 onClick={() => setSelectedType(type)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  selectedType === type
-                    ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg'
-                    : 'bg-white/80 text-earth-700 hover:bg-teal-50 border border-earth-200 backdrop-blur-sm'
-                }`}
+                className={selectedType === type ? 'btn-pill-active' : 'btn-pill-inactive'}
               >
                 {type}
               </button>
@@ -310,13 +348,14 @@ const EventsPage: React.FC = () => {
                 </div>
                 
                 {/* Delete button - only show for user-created events */}
-                {event.organizer === 'You' && (
+                {event.organizer === profile.name && (
                   <button
                     onClick={() => handleDelete(event.id)}
-                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                    className="btn-icon-sm"
                     title="Delete event"
+                    aria-label="Delete event"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4 text-red-500" />
                   </button>
                 )}
               </div>
@@ -340,33 +379,91 @@ const EventsPage: React.FC = () => {
                     {/* Existing Comments */}
                     {event.comments && event.comments.length > 0 && (
                       <div className="space-y-3 mb-3">
-                        {event.comments.map((comment) => (
-                          <div key={comment.id} className="bg-earth-50 rounded-lg p-3">
-                            <div className="flex items-start gap-3">
-                              <img
-                                src={comment.authorAvatar}
-                                alt={comment.author}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold text-sm text-earth-900">{comment.author}</span>
-                                  <span className="text-xs text-earth-500">
-                                    {new Date(comment.timestamp).toLocaleDateString()}
-                                  </span>
+                        {event.comments.map((comment) => {
+                          const isMyComment = comment.author === profile.name
+                          const isEditing = editingCommentId === comment.id
+                          
+                          return (
+                            <div key={comment.id} className="bg-earth-50 rounded-lg p-3">
+                              <div className="flex items-start gap-3">
+                                <img
+                                  src={comment.authorAvatar}
+                                  alt={comment.author}
+                                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-sm text-earth-900">{comment.author}</span>
+                                      <span className="text-xs text-earth-500">
+                                        {new Date(comment.timestamp).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    {isMyComment && !isEditing && (
+                                      <div className="flex gap-1">
+                                        <button
+                                          onClick={() => handleEditComment(event.id, comment.id, comment.content)}
+                                          className="p-1 text-teal-600 hover:bg-teal-100 rounded"
+                                          aria-label="Edit comment"
+                                        >
+                                          <Edit3 className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteComment(event.id, comment.id)}
+                                          className="p-1 text-red-600 hover:bg-red-100 rounded"
+                                          aria-label="Delete comment"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {isEditing ? (
+                                    <div className="space-y-2">
+                                      <input
+                                        type="text"
+                                        value={editCommentText}
+                                        onChange={(e) => setEditCommentText(e.target.value)}
+                                        className="w-full px-2 py-1 bg-white border border-earth-200 rounded text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                        autoFocus
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleSaveEdit(event.id, comment.id)}
+                                          className="px-3 py-1 bg-teal-500 hover:bg-teal-600 text-white text-xs rounded"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={handleCancelEdit}
+                                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs rounded"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <p className="text-sm text-earth-700 break-words">{comment.content}</p>
+                                      <button
+                                        onClick={() => handleLikeComment(event.id, comment.id)}
+                                        className={`flex items-center gap-1 text-xs mt-1 transition-colors ${
+                                          isEventCommentLiked(event.id, comment.id)
+                                            ? 'text-red-500 hover:text-red-600'
+                                            : 'text-earth-500 hover:text-teal-600'
+                                        }`}
+                                      >
+                                        <ThumbsUp className={`w-3 h-3 ${isEventCommentLiked(event.id, comment.id) ? 'fill-red-500' : ''}`} />
+                                        <span>{comment.likes}</span>
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
-                                <p className="text-sm text-earth-700">{comment.content}</p>
-                                <button
-                                  onClick={() => handleLikeComment(event.id, comment.id)}
-                                  className="flex items-center gap-1 text-xs text-earth-500 hover:text-teal-600 mt-1"
-                                >
-                                  <ThumbsUp className="w-3 h-3" />
-                                  <span>{comment.likes}</span>
-                                </button>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
 
@@ -399,30 +496,45 @@ const EventsPage: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-2 mt-4">
-                {event.currentDogs < event.maxDogs ? (
-                  <button
-                    onClick={() => handleJoinEvent(event.id)}
-                    className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white py-2 px-4 rounded-xl text-sm font-medium font-body transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                  >
-                    Join Event
-                  </button>
-                ) : (
-                  <button
-                    disabled
-                    className="flex-1 bg-earth-300 text-earth-500 py-2 px-4 rounded-xl cursor-not-allowed font-body"
-                  >
-                    Event Full
-                  </button>
-                )}
-                
-                {event.currentDogs > 0 && (
-                  <button
-                    onClick={() => handleLeaveEvent(event.id)}
-                    className="px-4 py-2 border border-earth-200 rounded-xl text-earth-700 hover:bg-earth-50 transition-all duration-300 font-body bg-white/80 backdrop-blur-sm"
-                  >
-                    Leave
-                  </button>
-                )}
+                {/* Check if user has joined this event */}
+                {(() => {
+                  const currentUserId = 'current-user'
+                  const attendees = event.attendees || []
+                  const hasJoined = attendees.includes(currentUserId)
+                  const isFull = event.currentDogs >= event.maxDogs
+                  
+                  if (hasJoined) {
+                    // User has joined - show Leave button
+                    return (
+                      <button
+                        onClick={() => handleLeaveEvent(event.id)}
+                        className="btn-outline btn-full"
+                      >
+                        Leave Event
+                      </button>
+                    )
+                  } else if (isFull) {
+                    // Event is full - show disabled button
+                    return (
+                      <button
+                        disabled
+                        className="flex-1 bg-earth-300 text-earth-500 py-2 px-4 rounded-xl cursor-not-allowed font-body"
+                      >
+                        Event Full
+                      </button>
+                    )
+                  } else {
+                    // User hasn't joined and event has space - show Join button
+                    return (
+                      <button
+                        onClick={() => handleJoinEvent(event.id)}
+                        className="btn-primary-teal btn-full"
+                      >
+                        Join Event
+                      </button>
+                    )
+                  }
+                })()}
               </div>
             </motion.div>
           ))}

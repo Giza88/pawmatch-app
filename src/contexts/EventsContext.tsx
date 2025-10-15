@@ -7,8 +7,11 @@ interface EventsContextType {
   deleteEvent: (eventId: string) => void
   joinEvent: (eventId: string) => void
   leaveEvent: (eventId: string) => void
-  addEventComment: (eventId: string, comment: Omit<EventComment, 'id' | 'eventId' | 'timestamp' | 'likes'>) => void
+  addEventComment: (eventId: string, comment: Omit<EventComment, 'id' | 'eventId' | 'timestamp' | 'likes' | 'likedBy'>) => void
+  editEventComment: (eventId: string, commentId: string, newContent: string) => void
+  deleteEventComment: (eventId: string, commentId: string) => void
   likeEventComment: (eventId: string, commentId: string) => void
+  isEventCommentLiked: (eventId: string, commentId: string) => boolean
   getEventsNearby: (location: string, radius?: number) => DogEvent[]
   getEventsForDog: (dogSize: string, energyLevel: string) => DogEvent[]
 }
@@ -332,18 +335,39 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
   /**
    * FUNCTION: Join an event
-   * Increments currentDogs count (up to maxDogs limit)
+   * Adds current user to attendees array and increments currentDogs count
+   * Prevents duplicate joins by checking if user is already attending
    * Saves updated event to localStorage
    * @param eventId - ID of the event to join
    */
   const joinEvent = (eventId: string) => {
+    const currentUserId = 'current-user' // In a real app, this would come from auth
     console.log('Joining event:', eventId)
+    
     setEvents(prev => {
       const updated = prev.map(event => {
         if (event.id === eventId) {
-          const newCount = Math.min(event.currentDogs + 1, event.maxDogs)
-          console.log(`Event ${event.title}: ${event.currentDogs} → ${newCount} dogs`)
-          return { ...event, currentDogs: newCount }
+          // Initialize attendees array if it doesn't exist
+          const attendees = event.attendees || []
+          
+          // Check if user has already joined
+          if (attendees.includes(currentUserId)) {
+            console.warn(`⚠️ User already joined event: ${event.title}`)
+            return event // Don't increment again
+          }
+          
+          // Check if event is full
+          if (event.currentDogs >= event.maxDogs) {
+            console.warn(`⚠️ Event is full: ${event.title}`)
+            return event
+          }
+          
+          // Add user to attendees and increment count
+          const newAttendees = [...attendees, currentUserId]
+          const newCount = event.currentDogs + 1
+          console.log(`✅ Joined event ${event.title}: ${event.currentDogs} → ${newCount} dogs`)
+          
+          return { ...event, currentDogs: newCount, attendees: newAttendees }
         }
         return event
       })
@@ -354,18 +378,33 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
   /**
    * FUNCTION: Leave an event
-   * Decrements currentDogs count (minimum 0)
+   * Removes current user from attendees array and decrements currentDogs count
+   * Only decrements if user was actually attending
    * Saves updated event to localStorage
    * @param eventId - ID of the event to leave
    */
   const leaveEvent = (eventId: string) => {
+    const currentUserId = 'current-user' // In a real app, this would come from auth
     console.log('Leaving event:', eventId)
+    
     setEvents(prev => {
       const updated = prev.map(event => {
         if (event.id === eventId) {
+          // Initialize attendees array if it doesn't exist
+          const attendees = event.attendees || []
+          
+          // Check if user has actually joined
+          if (!attendees.includes(currentUserId)) {
+            console.warn(`⚠️ User hasn't joined event: ${event.title}`)
+            return event // Don't decrement if user wasn't attending
+          }
+          
+          // Remove user from attendees and decrement count
+          const newAttendees = attendees.filter((id: string) => id !== currentUserId)
           const newCount = Math.max(event.currentDogs - 1, 0)
-          console.log(`Event ${event.title}: ${event.currentDogs} → ${newCount} dogs`)
-          return { ...event, currentDogs: newCount }
+          console.log(`👋 Left event ${event.title}: ${event.currentDogs} → ${newCount} dogs`)
+          
+          return { ...event, currentDogs: newCount, attendees: newAttendees }
         }
         return event
       })
@@ -374,13 +413,14 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     })
   }
 
-  const addEventComment = (eventId: string, comment: Omit<EventComment, 'id' | 'eventId' | 'timestamp' | 'likes'>) => {
+  const addEventComment = (eventId: string, comment: Omit<EventComment, 'id' | 'eventId' | 'timestamp' | 'likes' | 'likedBy'>) => {
     const newComment: EventComment = {
       ...comment,
       id: Date.now().toString(),
       eventId,
       timestamp: new Date(),
-      likes: 0
+      likes: 0,
+      likedBy: []
     }
     
     setEvents(prev => {
@@ -394,23 +434,86 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     })
   }
 
-  const likeEventComment = (eventId: string, commentId: string) => {
+  const editEventComment = (eventId: string, commentId: string, newContent: string) => {
+    console.log('Editing comment:', commentId, 'with new content:', newContent)
     setEvents(prev => {
       const updated = prev.map(event => 
         event.id === eventId 
           ? {
               ...event,
-              comments: event.comments.map(comment =>
-                comment.id === commentId 
-                  ? { ...comment, likes: comment.likes + 1 }
+              comments: event.comments?.map(comment =>
+                comment.id === commentId
+                  ? { ...comment, content: newContent }
                   : comment
-              )
+              ) || []
             }
           : event
       )
       localStorage.setItem('dogEvents', JSON.stringify(updated))
       return updated
     })
+  }
+
+  const deleteEventComment = (eventId: string, commentId: string) => {
+    console.log('Deleting comment:', commentId)
+    setEvents(prev => {
+      const updated = prev.map(event => 
+        event.id === eventId 
+          ? {
+              ...event,
+              comments: event.comments?.filter(comment => comment.id !== commentId) || []
+            }
+          : event
+      )
+      localStorage.setItem('dogEvents', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const likeEventComment = (eventId: string, commentId: string) => {
+    const currentUserId = 'current-user'
+    
+    setEvents(prev => {
+      const updated = prev.map(event => 
+        event.id === eventId 
+          ? {
+              ...event,
+              comments: event.comments.map(comment => {
+                if (comment.id === commentId) {
+                  const likedBy = comment.likedBy || []
+                  const hasLiked = likedBy.includes(currentUserId)
+                  
+                  // Toggle like
+                  if (hasLiked) {
+                    return {
+                      ...comment,
+                      likes: Math.max(0, comment.likes - 1),
+                      likedBy: likedBy.filter(id => id !== currentUserId)
+                    }
+                  } else {
+                    return {
+                      ...comment,
+                      likes: comment.likes + 1,
+                      likedBy: [...likedBy, currentUserId]
+                    }
+                  }
+                }
+                return comment
+              })
+            }
+          : event
+      )
+      localStorage.setItem('dogEvents', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const isEventCommentLiked = (eventId: string, commentId: string) => {
+    const currentUserId = 'current-user'
+    const event = events.find(e => e.id === eventId)
+    if (!event) return false
+    const comment = event.comments?.find(c => c.id === commentId)
+    return comment && comment.likedBy ? comment.likedBy.includes(currentUserId) : false
   }
 
   const getEventsNearby = (location: string, _radius: number = 5) => {
@@ -437,7 +540,10 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     joinEvent,
     leaveEvent,
     addEventComment,
+    editEventComment,
+    deleteEventComment,
     likeEventComment,
+    isEventCommentLiked,
     getEventsNearby,
     getEventsForDog
   }

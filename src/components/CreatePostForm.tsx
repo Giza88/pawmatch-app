@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { X, Send, Hash } from 'lucide-react'
 import { useCommunity } from '../contexts/CommunityContext'
+import { useProfile } from '../contexts/ProfileContext'
 
 interface CreatePostFormProps {
   onClose: () => void
@@ -9,6 +10,7 @@ interface CreatePostFormProps {
 
 const CreatePostForm: React.FC<CreatePostFormProps> = ({ onClose }) => {
   const { addPost } = useCommunity()
+  const { profile } = useProfile()
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -38,8 +40,8 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({ onClose }) => {
     addPost({
       title: formData.title.trim(),
       content: formData.content.trim(),
-      author: 'You',
-      authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      author: profile.name,
+      authorAvatar: profile.avatar,
       category: formData.category,
       tags
     })

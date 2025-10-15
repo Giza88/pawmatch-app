@@ -333,7 +333,7 @@ const ProfilePage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
       <DebugInfo />
       {/* Hero Section with Dog Using Phone */}
       <div className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-orange-500 py-16">
@@ -452,7 +452,7 @@ const ProfilePage: React.FC = () => {
           {/* Edit Profile Button */}
           <button
             onClick={() => setIsEditing(true)}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2"
+            className="btn-primary-teal btn-full btn-icon-left"
           >
             <Edit3 className="w-5 h-5" />
             Edit Profile
@@ -630,14 +630,14 @@ const ProfilePage: React.FC = () => {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 bg-gradient-to-r from-earth-500 to-earth-600 hover:from-earth-600 hover:to-earth-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                  className="btn-secondary flex-1"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEditSubmit}
                   disabled={isSubmitting}
-                  className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white py-3 px-6 rounded-xl font-body font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                  className="btn-primary-teal flex-1"
                 >
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -668,7 +668,8 @@ const ProfilePage: React.FC = () => {
                 <h2 className="text-xl font-display font-bold text-earth-900">Change Photos</h2>
                 <button
                   onClick={() => setIsChangingPhotos(false)}
-                  className="p-2 hover:bg-earth-100 rounded-full transition-colors"
+                  className="btn-icon-sm"
+                  aria-label="Close photos modal"
                 >
                   <X className="w-5 h-5 text-earth-600" />
                 </button>
