@@ -47,7 +47,7 @@ const BottomNavigation: React.FC = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-earth-200 shadow-lg z-50 pb-safe">
       <div className="max-w-md mx-auto px-1">
-        <div className="flex items-center justify-between py-3">
+        <div className="flex items-center justify-between py-2">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
@@ -57,12 +57,12 @@ const BottomNavigation: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center py-1 px-2 rounded-lg transition-colors duration-200 ${
+                className={`flex flex-col items-center py-1 px-0.5 rounded-lg transition-colors duration-200 min-w-0 flex-1 ${
                   isActive ? 'bg-teal-50' : 'hover:bg-earth-50'
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-1 ${activeColor}`} />
-                <span className={`text-xs font-medium ${activeColor} font-body`}>
+                <Icon className={`w-4 h-4 mb-1 ${activeColor}`} />
+                <span className={`text-xs font-medium ${activeColor} font-body leading-tight truncate`}>
                   {item.label}
                 </span>
               </Link>

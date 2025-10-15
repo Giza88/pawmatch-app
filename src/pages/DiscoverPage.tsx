@@ -527,6 +527,7 @@ const DiscoverPage: React.FC = () => {
   // UI STATE: Loading and notification states
   const [isLoading, setIsLoading] = useState(true)
   const [showSaveNotification, setShowSaveNotification] = useState(false)
+  const [notificationStatus, setNotificationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle')
   
   // STATE: User preferences for filtering dogs - loaded from localStorage
   const [preferences, setPreferences] = useState(() => {
@@ -788,7 +789,7 @@ const DiscoverPage: React.FC = () => {
       />
 
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-earth-200">
+      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-100">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Logo size="md" showText={false} />
@@ -827,31 +828,40 @@ const DiscoverPage: React.FC = () => {
                 onClick={() => {
                   if ('Notification' in window) {
                     if (Notification.permission === 'granted') {
+                      setNotificationStatus('granted')
                       new Notification('Pawmatch™', {
                         body: 'You have new matches! Check them out.',
                         icon: '/paw match logo.png'
                       })
+                      setTimeout(() => setNotificationStatus('idle'), 3000)
                     } else if (Notification.permission !== 'denied') {
+                      setNotificationStatus('requesting')
                       Notification.requestPermission().then(permission => {
                         if (permission === 'granted') {
+                          setNotificationStatus('granted')
                           new Notification('Pawmatch™', {
                             body: 'Notifications enabled! You\'ll be notified of new matches.',
                             icon: '/paw match logo.png'
                           })
+                        } else {
+                          setNotificationStatus('denied')
                         }
+                        setTimeout(() => setNotificationStatus('idle'), 3000)
                       })
                     } else {
+                      setNotificationStatus('denied')
                       alert('Notifications are blocked. Please enable them in your browser settings.')
+                      setTimeout(() => setNotificationStatus('idle'), 3000)
                     }
                   } else {
                     alert('Notifications not supported by this browser.')
                   }
                 }}
-                className="btn-icon"
-                title="Notifications"
+                className={`btn-icon ${notificationStatus === 'granted' ? 'bg-green-500 hover:bg-green-600' : notificationStatus === 'denied' ? 'bg-red-500 hover:bg-red-600' : notificationStatus === 'requesting' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                title={notificationStatus === 'granted' ? 'Notifications enabled!' : notificationStatus === 'denied' ? 'Notifications blocked' : notificationStatus === 'requesting' ? 'Requesting permission...' : 'Notifications'}
                 aria-label="Notifications"
               >
-                <Bell className="w-5 h-5 text-teal-600" />
+                <Bell className={`w-5 h-5 ${notificationStatus === 'granted' ? 'text-white' : notificationStatus === 'denied' ? 'text-white' : notificationStatus === 'requesting' ? 'text-white' : 'text-teal-600'}`} />
               </button>
             </div>
           </div>
