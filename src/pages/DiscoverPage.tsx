@@ -10,7 +10,6 @@ import LoadingScreen from '../components/LoadingScreen'
 import { buttonVariants, iconVariants } from '../utils/animations'
 import { DogProfile } from '../components/DogProfileCard'
 import NotificationPermissionBanner from '../components/NotificationPermissionBanner'
-import NotificationTest from '../components/NotificationTest'
 import { useNotifications } from '../contexts/NotificationContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { UserProfile } from '../contexts/ProfileContext'
@@ -352,8 +351,6 @@ const DiscoverPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 max-w-md mx-auto px-4 py-6 safe-area-bottom">
-        {/* Notification Test Component */}
-        <NotificationTest />
 
         {/* Stats Bar */}
         <div className="flex items-center justify-between mb-6 p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-earth-200">
