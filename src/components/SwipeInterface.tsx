@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, X, RotateCcw, Sparkles } from 'lucide-react'
 import DogProfileCard, { DogProfile } from './DogProfileCard'
 import EventSuggestions from './EventSuggestions'
 import { useEvents } from '../contexts/EventsContext'
+import { notificationService } from '../services/notificationService'
 import { sendMatchNotification } from '../utils/notifications'
 
 /**
@@ -44,12 +45,27 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
   const [matchedDog, setMatchedDog] = useState<DogProfile | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const { joinEvent } = useEvents()
+  
+  // Refs to store timeout IDs for cleanup
+  const matchAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const dislikeAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (matchAnimationTimeoutRef.current) {
+        clearTimeout(matchAnimationTimeoutRef.current)
+      }
+      if (dislikeAnimationTimeoutRef.current) {
+        clearTimeout(dislikeAnimationTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
     const currentDog = dogs[currentIndex]
     if (!currentDog) return
 
-    console.log(`Button clicked: ${direction === 'right' ? 'LIKE' : 'NOPE'} for ${currentDog.name}`)
     
     // Add to swipe history
     setSwipeHistory(prev => [...prev, { dog: currentDog, direction }])
@@ -57,22 +73,34 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
     setLastSwipeDirection(direction)
     setSwipedDogs(prev => new Set(prev).add(currentDog.id))
     
+    // Clear any existing timeouts
+    if (matchAnimationTimeoutRef.current) {
+      clearTimeout(matchAnimationTimeoutRef.current)
+    }
+    if (dislikeAnimationTimeoutRef.current) {
+      clearTimeout(dislikeAnimationTimeoutRef.current)
+    }
+
     // Show animation based on direction
     if (direction === 'right') {
       setShowMatchAnimation(true)
-      setTimeout(() => {
+      matchAnimationTimeoutRef.current = setTimeout(() => {
         setShowMatchAnimation(false)
         // Store matched dog for potential event suggestions (but don't auto-show)
         setMatchedDog(currentDog)
+        matchAnimationTimeoutRef.current = null
       }, 1500)
       
-      // Send match notification
-      sendMatchNotification(currentDog.name, currentDog.breed)
+      // Send match notification using our new service
+      notificationService.sendMatchNotification(currentDog.name, currentDog.breed, 'New Match!')
       
       onMatch(currentDog)
     } else {
       setShowDislikeAnimation(true)
-      setTimeout(() => setShowDislikeAnimation(false), 1000)
+      dislikeAnimationTimeoutRef.current = setTimeout(() => {
+        setShowDislikeAnimation(false)
+        dislikeAnimationTimeoutRef.current = null
+      }, 1000)
       onDislike(currentDog)
     }
     
@@ -86,7 +114,6 @@ const SwipeInterface: React.FC<SwipeInterfaceProps> = ({ dogs, onMatch, onDislik
       // Get the last swiped dog from history
       const lastSwipe = swipeHistory[swipeHistory.length - 1]
       
-      console.log(`↩️ Undoing ${lastSwipe.direction === 'right' ? 'LIKE' : 'PASS'} for ${lastSwipe.dog.name}`)
       
       // Notify parent to undo the match/dislike
       if (onUndo) {

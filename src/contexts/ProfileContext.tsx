@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/localStorage'
 
 export interface UserProfile {
   id: string
@@ -46,27 +47,19 @@ interface ProfileProviderProps {
 export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile>(() => {
     // SIMPLE LOGIC: Always check onboarding data first
-    console.log('🔍 ProfileContext - Starting profile initialization...')
+    const onboardingResult = safeGetItem<any>('pawfect-match-onboarding')
     
-    const onboardingData = localStorage.getItem('pawfect-match-onboarding')
-    console.log('📦 Raw onboarding data:', onboardingData)
-    
-    if (onboardingData) {
+    if (onboardingResult.success && onboardingResult.data) {
       try {
-        const parsed = JSON.parse(onboardingData)
-        console.log('📋 Parsed onboarding data:', parsed)
+        const parsed = onboardingResult.data
         
         if (parsed.isCompleted && parsed.fullName) {
-          console.log('✅ NEW USER FOUND - Creating profile for:', parsed.fullName)
-          
           // Clear ALL old data for new user
-          console.log('🧹 Clearing old data for new user...')
-          localStorage.removeItem('dogConnections')
-          localStorage.removeItem('dogSkipped')
-          localStorage.removeItem('dogPreferences')
+          safeRemoveItem('dogConnections')
+          safeRemoveItem('dogSkipped')
+          safeRemoveItem('dogPreferences')
           
           // Create profile from onboarding data
-          // Fix: Use dogPhoto as avatar since that's what the user uploaded during onboarding
           const newProfile: UserProfile = {
             id: 'user-1',
             name: parsed.fullName,
@@ -76,8 +69,8 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
             memberSince: parsed.completedAt 
               ? new Date(parsed.completedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
               : new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            avatar: parsed.profilePhoto || parsed.dogPhoto || '', // Use dogPhoto as fallback for avatar
-            dogPhoto: '', // Clear dog photo since user uploaded their own photo
+            avatar: parsed.profilePhoto || parsed.dogPhoto || '',
+            dogPhoto: '',
             dogName: parsed.dogName || '',
             dogBreed: parsed.breed || '',
             dogBio: parsed.dogName ? `Meet ${parsed.dogName}, a ${parsed.age || 'young'}-year-old ${parsed.breed || 'lovable dog'}!` : '',
@@ -89,29 +82,24 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
           }
           
           // Save the new profile
-          localStorage.setItem('userProfile', JSON.stringify(newProfile))
-          console.log('💾 Profile saved for new user:', newProfile)
+          const saveResult = safeSetItem('userProfile', newProfile)
+          if (!saveResult.success) {
+            console.error('Failed to save profile:', saveResult.error)
+          }
           return newProfile
         }
       } catch (error) {
-        console.error('❌ Error parsing onboarding data:', error)
+        console.error('Error parsing onboarding data:', error)
       }
     }
     
     // Try to load existing profile
-    const savedProfile = localStorage.getItem('userProfile')
-    if (savedProfile) {
-      try {
-        const parsed = JSON.parse(savedProfile)
-        console.log('📁 Loaded existing profile:', parsed)
-        return parsed
-      } catch (error) {
-        console.error('❌ Error loading saved profile:', error)
-      }
+    const savedProfileResult = safeGetItem<UserProfile>('userProfile')
+    if (savedProfileResult.success && savedProfileResult.data) {
+      return savedProfileResult.data
     }
     
     // Default empty profile
-    console.log('🆕 Using default empty profile')
     return {
       id: 'user-1',
       name: '',
@@ -136,13 +124,12 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
 
   // Set loading to false after initialization
   useEffect(() => {
-    console.log('🏁 ProfileContext - Initialization complete, setting loading to false')
     setIsLoading(false)
   }, [])
 
   // Monitor profile changes
   useEffect(() => {
-    console.log('👤 Profile state updated:', profile)
+    // Profile state updated
   }, [profile])
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
@@ -151,9 +138,13 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       
       const updatedProfile = { ...profile, ...updates }
       setProfile(updatedProfile)
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
       
-      console.log('✅ Profile updated:', updates)
+      const saveResult = safeSetItem('userProfile', updatedProfile)
+      if (!saveResult.success) {
+        console.error('Failed to save profile updates:', saveResult.error)
+        throw new Error(saveResult.error)
+      }
+      
     } catch (error) {
       console.error('❌ Error updating profile:', error)
       throw error
@@ -166,9 +157,13 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       
       const updatedProfile = { ...profile, avatar: avatarUrl }
       setProfile(updatedProfile)
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
       
-      console.log('✅ Avatar updated:', avatarUrl)
+      const saveResult = safeSetItem('userProfile', updatedProfile)
+      if (!saveResult.success) {
+        console.error('Failed to save avatar:', saveResult.error)
+        throw new Error(saveResult.error)
+      }
+      
     } catch (error) {
       console.error('❌ Error updating avatar:', error)
       throw error
@@ -181,9 +176,13 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
       
       const updatedProfile = { ...profile, dogPhoto: photoUrl }
       setProfile(updatedProfile)
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
       
-      console.log('✅ Dog photo updated:', photoUrl)
+      const saveResult = safeSetItem('userProfile', updatedProfile)
+      if (!saveResult.success) {
+        console.error('Failed to save dog photo:', saveResult.error)
+        throw new Error(saveResult.error)
+      }
+      
     } catch (error) {
       console.error('❌ Error updating dog photo:', error)
       throw error
@@ -199,9 +198,13 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
         preferences: { ...profile.preferences, ...preferences }
       }
       setProfile(updatedProfile)
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
       
-      console.log('✅ Preferences updated:', preferences)
+      const saveResult = safeSetItem('userProfile', updatedProfile)
+      if (!saveResult.success) {
+        console.error('Failed to save preferences:', saveResult.error)
+        throw new Error(saveResult.error)
+      }
+      
     } catch (error) {
       console.error('❌ Error updating preferences:', error)
       throw error
@@ -212,7 +215,6 @@ export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children }) =>
     try {
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      console.log('👋 User signed out')
       
       // Reset to default profile
       setProfile({

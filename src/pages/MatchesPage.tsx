@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, MessageCircle, MapPin, Calendar, Phone, Mail, Star, Filter, Search, X } from 'lucide-react'
+import { Heart, MessageCircle, MapPin, Phone, Mail, Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
 import { DogProfile } from '../components/DogProfileCard'
@@ -16,6 +16,7 @@ const mockMatches: (DogProfile & {
     phone: string
     email: string
     location: string
+    avatar?: string
   }
 })[] = [
   {
@@ -164,7 +165,7 @@ const MatchesPage: React.FC = () => {
     }
   }, [])
 
-  const filteredMatches = matches.filter(match => {
+  const filteredMatches = matches.filter((match: any) => {
     const matchesSearch = match.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          match.breed.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          match.owner.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -173,21 +174,9 @@ const MatchesPage: React.FC = () => {
   })
 
   const handleStartChat = (match: typeof mockMatches[0]) => {
-    // Map match IDs to conversation IDs
-    const conversationMap: { [key: string]: string } = {
-      '1': 'conv-1', // Buddy
-      '2': 'conv-2', // Luna  
-      '3': 'conv-3'  // Bella
-    }
-    
-    const conversationId = conversationMap[match.id]
-    if (conversationId) {
-      navigate(`/chat/${conversationId}`)
-    } else {
-      // For other dogs, create a new conversation ID based on the dog's ID
-      const newConversationId = `conv-${match.id}`
-      navigate(`/chat/${newConversationId}`)
-    }
+    // Create a simple conversation ID for each match
+    const newConversationId = `conv-${match.id}`
+    navigate(`/chat/${newConversationId}`)
   }
 
   const handleCallOwner = (match: typeof mockMatches[0]) => {
@@ -250,7 +239,7 @@ const MatchesPage: React.FC = () => {
       {/* Matches List */}
       <div className="max-w-md mx-auto px-4 pb-6">
         <AnimatePresence>
-          {filteredMatches.map((match, index) => (
+          {filteredMatches.map((match: any, index: number) => (
             <motion.div
               key={match.id}
               initial={{ opacity: 0, y: 20 }}

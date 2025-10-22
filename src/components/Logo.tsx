@@ -30,11 +30,11 @@ const Logo: React.FC<LogoProps> = ({
       {/* Logo Icon */}
       <div className={`${sizeClasses[size]} relative`}>
         {/* Your actual app logo - replace with your image */}
-        <div className="w-full h-full rounded-full overflow-hidden shadow-lg">
+        <div className="w-full h-full rounded-lg overflow-hidden shadow-lg">
           <img 
-            src="/paw match logo.png" 
+            src="/pawmatch-logo-white-background.png" 
             alt="Pawmatch™ Logo" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             onError={(e) => {
               // Fallback to a simple icon if image fails to load
               const target = e.target as HTMLImageElement;
@@ -45,7 +45,7 @@ const Logo: React.FC<LogoProps> = ({
           />
           {/* Fallback icon */}
           <div 
-            className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-lg"
+            className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center shadow-lg"
             style={{ display: 'none' }}
           >
             <svg 
@@ -65,7 +65,7 @@ const Logo: React.FC<LogoProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full blur-sm opacity-20 -z-10"></div>
       </div>
 
-      {/* Logo Text */}
+      {/* Logo Text - Only show if logo doesn't include text */}
       {showText && (
         <div className="flex items-center">
           <span className={`font-display font-bold bg-gradient-to-r from-earth-900 to-teal-600 bg-clip-text text-transparent ${textSizeClasses[size]}`}>

@@ -110,7 +110,7 @@ class NotificationManager {
     // Request permission if needed
     if (Notification.permission !== 'granted') {
       await this.requestPermission()
-      if (Notification.permission !== 'granted') {
+      if (Notification.permission === 'denied') {
         console.warn('Notification permission denied')
         return
       }
@@ -123,9 +123,7 @@ class NotificationManager {
         badge: data.badge || '/favicon.ico',
         tag: data.tag || type,
         requireInteraction: data.requireInteraction || false,
-        silent: data.silent || !this.settings.sound,
-        timestamp: data.timestamp || Date.now(),
-        actions: data.actions || []
+        silent: data.silent || !this.settings.sound
       })
 
       // Auto-close after 5 seconds unless requireInteraction is true

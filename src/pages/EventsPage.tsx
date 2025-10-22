@@ -6,6 +6,9 @@ import { useProfile } from '../contexts/ProfileContext'
 import CreateEventForm from '../components/CreateEventForm'
 import LoadingScreen from '../components/LoadingScreen'
 import Logo from '../components/Logo'
+import ConfirmationDialog from '../components/ConfirmationDialog'
+import OptimizedAvatar from '../components/OptimizedAvatar'
+import { listItemVariants } from '../utils/animations'
 
 export interface EventComment {
   id: string
@@ -60,18 +63,26 @@ const EventsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState<string>('All')
   const [sortBy, setSortBy] = useState<'date' | 'attendees' | 'recent'>('date')
+  
+  // Confirmation dialog state
+  const [showDeleteEventDialog, setShowDeleteEventDialog] = useState(false)
+  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false)
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null)
+  const [commentToDelete, setCommentToDelete] = useState<{ eventId: string; commentId: string } | null>(null)
 
   /**
    * EVENT HANDLER: Delete an event
    * Shows confirmation dialog before deleting
    */
   const handleDelete = (eventId: string) => {
-    console.log('Attempting to delete event:', eventId)
-    if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      console.log('User confirmed deletion, calling deleteEvent')
-      deleteEvent(eventId)
-    } else {
-      console.log('User cancelled deletion')
+    setEventToDelete(eventId)
+    setShowDeleteEventDialog(true)
+  }
+
+  const confirmDeleteEvent = () => {
+    if (eventToDelete) {
+      deleteEvent(eventToDelete)
+      setEventToDelete(null)
     }
   }
 
@@ -131,8 +142,14 @@ const EventsPage: React.FC = () => {
    * EVENT HANDLER: Delete a comment
    */
   const handleDeleteComment = (eventId: string, commentId: string) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      deleteEventComment(eventId, commentId)
+    setCommentToDelete({ eventId, commentId })
+    setShowDeleteCommentDialog(true)
+  }
+
+  const confirmDeleteComment = () => {
+    if (commentToDelete) {
+      deleteEventComment(commentToDelete.eventId, commentToDelete.commentId)
+      setCommentToDelete(null)
     }
   }
 
@@ -293,11 +310,12 @@ const EventsPage: React.FC = () => {
           {filteredAndSortedEvents.map((event, index) => (
             <motion.div
               key={event.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-earth-200 p-4 mb-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              variants={listItemVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              whileHover="hover"
+              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-earth-200 p-4 mb-4 card-hover fade-in"
             >
               {/* Event Header */}
               <div className="flex items-start justify-between mb-3">
@@ -336,10 +354,11 @@ const EventsPage: React.FC = () => {
               {/* Organizer */}
               <div className="flex items-center justify-between mb-4 p-3 bg-teal-50/50 rounded-lg border border-teal-200/50">
                 <div className="flex items-center gap-3">
-                  <img
+                  <OptimizedAvatar
                     src={event.organizerPhoto}
                     alt={event.organizer}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-teal-200"
+                    size="sm"
+                    className="border-2 border-teal-200"
                   />
                   <div>
                     <p className="text-sm font-medium text-earth-900 font-body">Organized by</p>
@@ -386,10 +405,11 @@ const EventsPage: React.FC = () => {
                           return (
                             <div key={comment.id} className="bg-earth-50 rounded-lg p-3">
                               <div className="flex items-start gap-3">
-                                <img
+                                <OptimizedAvatar
                                   src={comment.authorAvatar}
                                   alt={comment.author}
-                                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                  size="sm"
+                                  className="flex-shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -553,6 +573,29 @@ const EventsPage: React.FC = () => {
       <CreateEventForm 
         isOpen={showCreateForm}
         onClose={() => setShowCreateForm(false)}
+      />
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        isOpen={showDeleteEventDialog}
+        onClose={() => setShowDeleteEventDialog(false)}
+        onConfirm={confirmDeleteEvent}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      <ConfirmationDialog
+        isOpen={showDeleteCommentDialog}
+        onClose={() => setShowDeleteCommentDialog(false)}
+        onConfirm={confirmDeleteComment}
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
       />
     </div>
   )

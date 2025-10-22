@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send, Image, MapPin, Phone, MoreVertical, Heart } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useChat } from '../contexts/ChatContext'
+import { useChat, ChatConversation } from '../contexts/ChatContext'
 import Logo from '../components/Logo'
 
 // Mock user data - in a real app, this would come from your user context
@@ -41,26 +41,28 @@ const ChatPage: React.FC = () => {
   const [showOptions, setShowOptions] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  let conversation = conversations.find(c => c.id === conversationId)
-  let conversationMessages = conversationId ? messages[conversationId] || [] : []
-  let otherParticipant = conversation?.participants.find(p => p !== 'user-1') || ''
-  let otherUser = mockUsers[otherParticipant as keyof typeof mockUsers]
+  const conversation = conversations.find(c => c.id === conversationId)
+  const conversationMessages = conversationId ? messages[conversationId] || [] : []
+  const otherParticipant = conversation?.participants.find(p => p !== 'user-1') || ''
+  const otherUser = mockUsers[otherParticipant as keyof typeof mockUsers] || {
+    id: otherParticipant,
+    name: 'Dog Owner',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+    dogName: 'Buddy',
+    dogPhoto: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100&h=100&fit=crop',
+    isOnline: true
+  }
 
   // If conversation doesn't exist, create it dynamically
   useEffect(() => {
     if (conversationId && !conversation) {
-      // Extract dog ID from conversation ID (e.g., "conv-4" -> "4")
+      // Extract dog ID from conversation ID (e.g., "conv-1" -> "1")
       const dogId = conversationId.replace('conv-', '')
       
       // Create a new conversation for this dog
       createConversation(['user-1', `user-${dogId}`])
-      
-      // Update local variables
-      conversation = conversations.find(c => c.id === conversationId)
-      otherParticipant = `user-${dogId}`
-      otherUser = mockUsers[otherParticipant as keyof typeof mockUsers]
     }
-  }, [conversationId, conversation, createConversation, conversations])
+  }, [conversationId, createConversation])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -100,13 +102,13 @@ const ChatPage: React.FC = () => {
     }
   }
 
-  if (!conversation || !otherUser) {
+  if (!conversationId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 flex items-center justify-center">
         <div className="text-center">
           <Heart className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-          <h2 className="text-xl font-display font-semibold text-earth-700 mb-2">Conversation not found</h2>
-          <p className="text-earth-500 font-body mb-6">This conversation may have been deleted or doesn't exist.</p>
+          <h2 className="text-xl font-display font-semibold text-earth-700 mb-2">No conversation selected</h2>
+          <p className="text-earth-500 font-body mb-6">Please select a conversation to start chatting.</p>
           <button
             onClick={() => navigate('/matches')}
             className="btn-primary-teal"

@@ -1,36 +1,26 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Camera, Edit3, Settings, Heart, MapPin, Calendar, Phone, Mail, Shield, LogOut, X, RotateCcw, CheckCircle } from 'lucide-react'
+import { User, Camera, Edit3, Settings, Heart, MapPin, Calendar, Phone, Mail, Shield, LogOut, X } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { useProfile } from '../contexts/ProfileContext'
 import { useOnboarding } from '../hooks/useOnboarding'
-import OnboardingDataViewer from '../components/OnboardingDataViewer'
 import Logo from '../components/Logo'
 import { getNotificationSettings, updateNotificationSettings, requestNotificationPermission, testNotification } from '../utils/notifications'
-import DebugInfo from '../components/DebugInfo'
+import ProfilePhotoUpload from '../components/ProfilePhotoUpload'
+import DogPhotoUpload from '../components/DogPhotoUpload'
 
 const ProfilePage: React.FC = () => {
   const { profile, isLoading, updateProfile, updateAvatar, updateDogPhoto, updatePreferences, signOut } = useProfile()
   const { onboardingData, resetOnboarding } = useOnboarding()
   
-  // Debug logging
-  console.log('ProfilePage - Current profile:', profile)
-  console.log('ProfilePage - Is loading:', isLoading)
-  console.log('ProfilePage - Onboarding data:', onboardingData)
-  
-  // Monitor profile changes
-  React.useEffect(() => {
-    console.log('ProfilePage - Profile changed:', profile)
-    console.log('ProfilePage - Profile name:', profile.name)
-    console.log('ProfilePage - Profile email:', profile.email)
-  }, [profile])
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPhotos, setIsChangingPhotos] = useState(false)
   const [isChangingPreferences, setIsChangingPreferences] = useState(false)
   const [isChangingPrivacy, setIsChangingPrivacy] = useState(false)
-  const [showResetOnboarding, setShowResetOnboarding] = useState(false)
-  const [showOnboardingData, setShowOnboardingData] = useState(false)
+  
+  // Confirmation dialog state
   const [notificationSettings, setNotificationSettings] = useState(getNotificationSettings())
+  const [showResetOnboarding, setShowResetOnboarding] = useState(false)
   const profilePhotoInputRef = React.useRef<HTMLInputElement>(null)
   const dogPhotoInputRef = React.useRef<HTMLInputElement>(null)
   const [editForm, setEditForm] = useState({
@@ -58,11 +48,9 @@ const ProfilePage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Simple logging for debugging
+  // Profile loaded
   React.useEffect(() => {
-    console.log('ProfilePage - Profile loaded:', profile)
-    console.log('ProfilePage - Profile name:', profile.name)
-    console.log('ProfilePage - Profile email:', profile.email)
+    // Profile state updated
   }, [profile])
 
   // Get real stats from localStorage or default to 0 for new profiles
@@ -71,13 +59,8 @@ const ProfilePage: React.FC = () => {
       const connections = localStorage.getItem('dogConnections')
       const events = localStorage.getItem('events')
       
-      console.log('ProfilePage - dogConnections in localStorage:', connections)
-      console.log('ProfilePage - events in localStorage:', events)
-      
       const matchesCount = connections ? JSON.parse(connections).length : 0
       const eventsCount = events ? JSON.parse(events).length : 0
-      
-      console.log('ProfilePage - Calculated stats:', { matches: matchesCount, events: eventsCount, checkIns: 0 })
       
       return {
         matches: matchesCount,
@@ -138,7 +121,6 @@ const ProfilePage: React.FC = () => {
           await updateDogPhoto(base64String)
         }
         setIsChangingPhotos(false)
-        console.log(`✅ ${type} photo updated successfully with Base64`)
       }
       reader.readAsDataURL(file)
     } catch (error) {
@@ -192,97 +174,7 @@ const ProfilePage: React.FC = () => {
     }
   }
 
-  // Function to reset profile system for testing (DEV ONLY)
-  const handleResetProfileSystem = () => {
-    if (confirm('Are you sure you want to reset the entire profile system? This will clear all user data and you\'ll need to go through onboarding again.')) {
-      // Clear all localStorage data
-      localStorage.removeItem('userProfile')
-      localStorage.removeItem('pawfect-match-onboarding')
-      localStorage.removeItem('dogConnections')
-      localStorage.removeItem('dogSkipped')
-      localStorage.removeItem('dogPreferences')
-      localStorage.removeItem('events')
-      localStorage.removeItem('communityPosts')
-      localStorage.removeItem('notificationSettings')
-      
-      console.log('🔄 Profile system reset - all data cleared')
-      console.log('🔄 Refreshing page to start fresh...')
-      
-      // Force reload
-      window.location.reload()
-    }
-  }
 
-  // Function to clear just the match data while keeping profile
-  const handleClearMatchData = () => {
-    if (confirm('Clear all match data (connections, skipped dogs, preferences)? This will reset your matches to 0.')) {
-      localStorage.removeItem('dogConnections')
-      localStorage.removeItem('dogSkipped')
-      localStorage.removeItem('dogPreferences')
-      console.log('🔄 Match data cleared - refreshing to see changes')
-      window.location.reload()
-    }
-  }
-
-  // Function to fix onboarding completion and reload profile
-  const handleFixOnboardingAndReload = () => {
-    console.log('🔧 Fixing onboarding completion status and reloading profile...')
-    
-    // Get onboarding data
-    const onboardingData = localStorage.getItem('pawfect-match-onboarding')
-    if (onboardingData) {
-      try {
-        const parsed = JSON.parse(onboardingData)
-        console.log('Current onboarding data:', parsed)
-        
-        // Fix the isCompleted flag
-        parsed.isCompleted = true
-        parsed.completedAt = new Date().toISOString()
-        
-        // Save the fixed onboarding data
-        localStorage.setItem('pawfect-match-onboarding', JSON.stringify(parsed))
-        console.log('✅ Fixed onboarding data:', parsed)
-        
-        // Clear old match data
-        localStorage.removeItem('dogConnections')
-        localStorage.removeItem('dogSkipped')
-        localStorage.removeItem('dogPreferences')
-        
-          // Create new profile from fixed onboarding data
-          // Fix: Use dogPhoto as avatar since that's what the user uploaded during onboarding
-          const newProfile = {
-            id: 'user-1',
-            name: parsed.fullName,
-            email: parsed.email || '',
-            phone: parsed.phone || '',
-            location: parsed.location || 'Your Location',
-            memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            avatar: parsed.profilePhoto || parsed.dogPhoto || '', // Use dogPhoto as fallback for avatar
-            dogPhoto: '', // Clear dog photo since user uploaded their own photo
-            dogName: parsed.dogName || '',
-            dogBreed: parsed.breed || '',
-            dogBio: parsed.dogName ? `Meet ${parsed.dogName}, a ${parsed.age || 'young'}-year-old ${parsed.breed || 'lovable dog'}!` : '',
-            preferences: {
-              notifications: true,
-              locationSharing: true,
-              profileVisibility: 'public'
-            }
-          }
-        
-        // Save the new profile
-        localStorage.setItem('userProfile', JSON.stringify(newProfile))
-        console.log('✅ Profile created from fixed onboarding data:', newProfile)
-        
-        // Force page refresh
-        window.location.reload()
-      } catch (error) {
-        console.error('Error fixing onboarding data:', error)
-        alert('Error fixing onboarding data!')
-      }
-    } else {
-      alert('No onboarding data found!')
-    }
-  }
 
   const handleNotificationSettingChange = (key: keyof typeof notificationSettings, value: boolean) => {
     const newSettings = { ...notificationSettings, [key]: value }
@@ -294,47 +186,22 @@ const ProfilePage: React.FC = () => {
     try {
       await signOut()
       // In a real app, you'd redirect to login
-      console.log('Signed out successfully')
     } catch (error) {
       console.error('Error signing out:', error)
     }
   }
 
-  const handleResetOnboarding = () => {
-    if (confirm('Reset onboarding data? This will take you back to the onboarding flow.')) {
-      // Reset onboarding data
-      const onboardingData = localStorage.getItem('pawfect-match-onboarding')
-      if (onboardingData) {
-        try {
-          const parsed = JSON.parse(onboardingData)
-          parsed.isCompleted = false
-          delete parsed.completedAt
-          localStorage.setItem('pawfect-match-onboarding', JSON.stringify(parsed))
-          console.log('🔄 Onboarding reset - refreshing to show onboarding flow')
-          window.location.reload()
-        } catch (error) {
-          console.error('Error resetting onboarding:', error)
-        }
-      }
-    }
-  }
 
   const menuItems = [
     { icon: User, label: 'Edit Profile', action: () => setIsEditing(true) },
     { icon: Camera, label: 'Change Photos', action: () => setIsChangingPhotos(true) },
     { icon: Settings, label: 'Preferences', action: () => setIsChangingPreferences(true) },
     { icon: Shield, label: 'Privacy', action: () => setIsChangingPrivacy(true) },
-    { icon: CheckCircle, label: 'Fix Onboarding & Reload (DEV)', action: handleFixOnboardingAndReload },
-    { icon: RotateCcw, label: 'Clear Match Data', action: handleClearMatchData },
-    { icon: RotateCcw, label: 'Reset Onboarding', action: handleResetOnboarding },
-    { icon: CheckCircle, label: 'View Onboarding Data', action: () => setShowOnboardingData(true) },
-    { icon: RotateCcw, label: 'Reset Profile System (DEV)', action: handleResetProfileSystem },
     { icon: LogOut, label: 'Sign Out', action: handleSignOut }
   ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-earth-50 to-teal-50 pb-32">
-      <DebugInfo />
       {/* Hero Section with Dog Using Phone */}
       <div className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-orange-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 via-teal-800/70 to-orange-600/60" />
@@ -675,76 +542,56 @@ const ProfilePage: React.FC = () => {
                 </button>
               </div>
               
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* Profile Photo */}
-                <div className="text-center">
-                  <h3 className="text-lg font-medium text-earth-900 mb-3">Profile Photo</h3>
-                  <div 
-                    onClick={() => handlePhotoClick('avatar')}
-                    className="relative inline-block mb-4 cursor-pointer group"
-                  >
-                    <img
-                      src={profile.avatar}
-                      alt="Profile"
-                      className="w-20 h-20 rounded-full object-cover border-2 border-earth-200 group-hover:border-teal-400 transition-colors"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-full flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handlePhotoClick('avatar')}
-                    className="w-full bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    📷 Choose Profile Photo
-                  </button>
-                  <p className="text-xs text-earth-500 mt-2">Click to select from your device</p>
+                <div>
+                  <h3 className="text-lg font-medium text-earth-900 mb-4">Profile Photo</h3>
+                  <ProfilePhotoUpload
+                    currentPhoto={profile.avatar}
+                    onPhotoSelect={async (file) => {
+                      if (file) {
+                        try {
+                          // Convert to base64 for storage
+                          const reader = new FileReader()
+                          reader.onload = async () => {
+                            const base64String = reader.result as string
+                            await updateAvatar(base64String)
+                          }
+                          reader.readAsDataURL(file)
+                        } catch (error) {
+                          console.error('Error updating profile photo:', error)
+                        }
+                      }
+                    }}
+                    size="lg"
+                    className="flex justify-center"
+                  />
                 </div>
 
-                {/* Dog Photo */}
-                <div className="text-center">
-                  <h3 className="text-lg font-medium text-earth-900 mb-3">Dog Photo</h3>
-                  <div 
-                    onClick={() => handlePhotoClick('dogPhoto')}
-                    className="relative inline-block mb-4 cursor-pointer group"
-                  >
-                    <img
-                      src={profile.dogPhoto}
-                      alt="Dog"
-                      className="w-20 h-20 rounded-xl object-cover border-2 border-earth-200 group-hover:border-teal-400 transition-colors"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-xl flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handlePhotoClick('dogPhoto')}
-                    className="w-full bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    📷 Choose Dog Photo
-                  </button>
-                  <p className="text-xs text-earth-500 mt-2">Click to select from your device</p>
+                {/* Dog Photos */}
+                <div>
+                  <h3 className="text-lg font-medium text-earth-900 mb-4">Dog Photos</h3>
+                  <DogPhotoUpload
+                    existingPhotos={profile.dogPhoto ? [profile.dogPhoto] : []}
+                    onPhotosSelect={async (files) => {
+                      if (files.length > 0) {
+                        try {
+                          // For now, use the first photo as the main dog photo
+                          const file = files[0]
+                          const reader = new FileReader()
+                          reader.onload = async () => {
+                            const base64String = reader.result as string
+                            await updateDogPhoto(base64String)
+                          }
+                          reader.readAsDataURL(file)
+                        } catch (error) {
+                          console.error('Error updating dog photos:', error)
+                        }
+                      }
+                    }}
+                    maxPhotos={6}
+                  />
                 </div>
-
-                {/* Hidden file inputs */}
-                <input
-                  ref={profilePhotoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e, 'avatar')}
-                  className="hidden"
-                />
-                <input
-                  ref={dogPhotoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e, 'dogPhoto')}
-                  className="hidden"
-                />
               </div>
             </motion.div>
           </motion.div>
@@ -891,12 +738,8 @@ const ProfilePage: React.FC = () => {
                     <div className="pt-4 border-t border-earth-200">
                       <button
                         onClick={async () => {
-                          console.log('🔔 Test Notification button clicked')
-                          console.log('Current notification settings:', notificationSettings)
-                          console.log('Browser notification permission:', Notification.permission)
                           try {
                             await testNotification()
-                            console.log('✅ Test notification function completed')
                           } catch (error) {
                             console.error('❌ Test notification function failed:', error)
                           }
@@ -1055,15 +898,6 @@ const ProfilePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Onboarding Data Viewer */}
-      <AnimatePresence>
-        {showOnboardingData && (
-          <OnboardingDataViewer
-            data={onboardingData}
-            onClose={() => setShowOnboardingData(false)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   )
 }

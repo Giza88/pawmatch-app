@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import DiscoverPage from './pages/DiscoverPage'
 import EventsPage from './pages/EventsPage'
 import CommunityPage from './pages/CommunityPage'
@@ -15,9 +16,33 @@ import { CommunityProvider } from './contexts/CommunityContext'
 import { HealthProvider } from './contexts/HealthContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import { ChatProvider } from './contexts/ChatContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import { useOnboarding } from './hooks/useOnboarding'
+import { pageVariants } from './utils/animations'
 
-function App() {
+// Page transition wrapper component
+const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation()
+  
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        className="min-h-screen"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+// App content component that can use navigate hook
+const AppContent: React.FC = () => {
+  const navigate = useNavigate()
   const { onboardingData, isLoading } = useOnboarding()
   const [onboardingCompleted, setOnboardingCompleted] = useState(false)
 
@@ -28,34 +53,12 @@ function App() {
       if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed.isCompleted) {
-          console.log('🚀 App loaded - onboarding already completed!')
+          console.log('✅ Onboarding already completed, setting state')
           setOnboardingCompleted(true)
         }
       }
     } catch (error) {
-      console.error('Error checking initial onboarding state:', error)
-    }
-  }, [])
-
-  // Monitor onboarding completion from localStorage or hook
-  useEffect(() => {
-    if (onboardingData.isCompleted) {
-      console.log('🎉 Onboarding completed - transitioning to main app!')
-      setOnboardingCompleted(true)
-    } else {
-      // Fallback: Check localStorage directly
-      try {
-        const stored = localStorage.getItem('pawfect-match-onboarding')
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (parsed.isCompleted) {
-            console.log('🔍 Found completed onboarding in localStorage, forcing transition!')
-            setOnboardingCompleted(true)
-          }
-        }
-      } catch (error) {
-        console.error('Error checking localStorage:', error)
-      }
+      console.error('Error checking localStorage:', error)
     }
   }, [onboardingData.isCompleted])
 
@@ -63,6 +66,8 @@ function App() {
   const handleOnboardingComplete = () => {
     console.log('🔄 Onboarding completion callback received!')
     setOnboardingCompleted(true)
+    // Navigate to discover page after onboarding completion
+    navigate('/discover')
   }
 
   console.log('🏗️ App render - isLoading:', isLoading, 'isCompleted:', onboardingData.isCompleted, 'onboardingCompleted:', onboardingCompleted)
@@ -80,30 +85,40 @@ function App() {
   console.log('🎉 Showing main app interface!')
 
   return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
+      <div className="pb-28 sm:pb-24"> {/* Add more padding bottom for bottom navigation on mobile */}
+        <PageTransition>
+          <Routes>
+            <Route path="/" element={<Navigate to="/discover" replace />} />
+            <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/chat/:conversationId" element={<ChatPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/community" element={<CommunityPage />} />
+            <Route path="/health" element={<HealthPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Routes>
+        </PageTransition>
+      </div>
+      <BottomNavigation />
+    </div>
+  )
+}
+
+function App() {
+  return (
     <HealthProvider>
       <CommunityProvider>
         <EventsProvider>
+          <NotificationProvider>
             <ChatProvider>
               <ProfileProvider>
                 <Router>
-                <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
-                  <div className="pb-28 sm:pb-24"> {/* Add more padding bottom for bottom navigation on mobile */}
-                    <Routes>
-                      <Route path="/" element={<Navigate to="/discover" replace />} />
-                      <Route path="/discover" element={<DiscoverPage />} />
-                      <Route path="/matches" element={<MatchesPage />} />
-                      <Route path="/chat/:conversationId" element={<ChatPage />} />
-                      <Route path="/events" element={<EventsPage />} />
-                      <Route path="/community" element={<CommunityPage />} />
-                      <Route path="/health" element={<HealthPage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                    </Routes>
-                  </div>
-                  <BottomNavigation />
-                </div>
+                  <AppContent />
                 </Router>
               </ProfileProvider>
             </ChatProvider>
+          </NotificationProvider>
         </EventsProvider>
       </CommunityProvider>
     </HealthProvider>

@@ -7,6 +7,8 @@ import CreatePostForm from '../components/CreatePostForm'
 import LoadingScreen from '../components/LoadingScreen'
 import TrendingPosts from '../components/TrendingPosts'
 import Logo from '../components/Logo'
+import ConfirmationDialog from '../components/ConfirmationDialog'
+import OptimizedAvatar from '../components/OptimizedAvatar'
 import { sendCommunityNotification } from '../utils/notifications'
 
 const CommunityPage: React.FC = () => {
@@ -21,6 +23,12 @@ const CommunityPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'comments'>('recent')
+  
+  // Confirmation dialog state
+  const [showDeletePostDialog, setShowDeletePostDialog] = useState(false)
+  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false)
+  const [postToDelete, setPostToDelete] = useState<string | null>(null)
+  const [commentToDelete, setCommentToDelete] = useState<{ postId: string; commentId: string } | null>(null)
 
   // Simulate loading time
   useEffect(() => {
@@ -89,12 +97,14 @@ const CommunityPage: React.FC = () => {
   }
 
   const handleDelete = (postId: string) => {
-    console.log('Attempting to delete post:', postId)
-    if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      console.log('User confirmed deletion, calling deletePost')
-      deletePost(postId)
-    } else {
-      console.log('User cancelled deletion')
+    setPostToDelete(postId)
+    setShowDeletePostDialog(true)
+  }
+
+  const confirmDeletePost = () => {
+    if (postToDelete) {
+      deletePost(postToDelete)
+      setPostToDelete(null)
     }
   }
 
@@ -137,8 +147,14 @@ const CommunityPage: React.FC = () => {
   }
 
   const handleDeleteComment = (postId: string, commentId: string) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      deleteComment(postId, commentId)
+    setCommentToDelete({ postId, commentId })
+    setShowDeleteCommentDialog(true)
+  }
+
+  const confirmDeleteComment = () => {
+    if (commentToDelete) {
+      deleteComment(commentToDelete.postId, commentToDelete.commentId)
+      setCommentToDelete(null)
     }
   }
 
@@ -263,15 +279,16 @@ const CommunityPage: React.FC = () => {
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-earth-200 overflow-hidden"
+              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-earth-200 overflow-hidden card-hover fade-in"
             >
               {/* Post Header */}
               <div className="p-4 border-b border-earth-100">
                 <div className="flex items-center gap-3 mb-3">
-                  <img
+                  <OptimizedAvatar
                     src={post.authorAvatar}
                     alt={post.author}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-earth-200"
+                    size="md"
+                    className="border-2 border-earth-200"
                   />
                   <div className="flex-1">
                     <h3 className="font-semibold text-earth-900">{post.author}</h3>
@@ -327,7 +344,7 @@ const CommunityPage: React.FC = () => {
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => handleLike(post.id)}
-                      className={`flex items-center gap-2 transition-colors ${
+                      className={`flex items-center gap-2 transition-colors btn-micro ${
                         isPostLiked(post.id) 
                           ? 'text-red-500' 
                           : 'text-earth-600 hover:text-red-500'
@@ -402,10 +419,11 @@ const CommunityPage: React.FC = () => {
                           
                           return (
                             <div key={comment.id} className="flex gap-3">
-                              <img
+                              <OptimizedAvatar
                                 src={comment.authorAvatar}
                                 alt={comment.author}
-                                className="w-8 h-8 rounded-full object-cover border border-earth-200"
+                                size="sm"
+                                className="border border-earth-200"
                               />
                               <div className="flex-1">
                                 <div className="bg-earth-50 rounded-lg p-3">
@@ -463,7 +481,7 @@ const CommunityPage: React.FC = () => {
                                 </div>
                                 <button
                                   onClick={() => handleLikeComment(post.id, comment.id)}
-                                  className={`flex items-center gap-1 text-xs mt-1 transition-colors ${
+                                  className={`flex items-center gap-1 text-xs mt-1 transition-colors btn-micro ${
                                     isCommentLiked(post.id, comment.id)
                                       ? 'text-red-500 hover:text-red-600'
                                       : 'text-earth-500 hover:text-teal-600'
@@ -514,6 +532,29 @@ const CommunityPage: React.FC = () => {
           <CreatePostForm onClose={() => setShowCreatePost(false)} />
         )}
       </AnimatePresence>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        isOpen={showDeletePostDialog}
+        onClose={() => setShowDeletePostDialog(false)}
+        onConfirm={confirmDeletePost}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      <ConfirmationDialog
+        isOpen={showDeleteCommentDialog}
+        onClose={() => setShowDeleteCommentDialog(false)}
+        onConfirm={confirmDeleteComment}
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   )
 }

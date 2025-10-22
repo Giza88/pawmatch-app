@@ -6,16 +6,14 @@ import { useNavigate } from 'react-router-dom'
 const features = [
   {
     icon: Heart,
-    title: "Swipe & Match",
-    description: "Find your perfect dog companion with our intuitive swipe interface",
+    title: "Match",
     color: "orange",
     delay: 0.1,
     route: "/"
   },
   {
     icon: MapPin,
-    title: "Local Events",
-    description: "Discover dog meetups and events happening in your area",
+    title: "Events",
     color: "teal",
     delay: 0.2,
     route: "/events"
@@ -23,15 +21,13 @@ const features = [
   {
     icon: MessageCircle,
     title: "Community",
-    description: "Connect with other dog owners in your neighborhood",
     color: "nature",
     delay: 0.3,
     route: "/community"
   },
   {
     icon: Calendar,
-    title: "Health Tracking",
-    description: "Keep track of vaccinations, vet visits, and health records",
+    title: "Health",
     color: "orange",
     delay: 0.4,
     route: "/health"
@@ -95,24 +91,14 @@ const FeatureShowcase: React.FC = () => {
                 className="group relative cursor-pointer"
                 onClick={() => handleFeatureClick(feature.route)}
               >
-                <div className="bg-white rounded-2xl p-8 shadow-lg border border-earth-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                  <div className={`w-16 h-16 rounded-2xl ${getColorClasses(feature.color)} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-8 h-8" />
-                  </div>
-
-                  <h3 className="text-2xl font-display font-bold text-earth-900 mb-4">
-                    {feature.title}
-                  </h3>
-                  <p className="text-earth-600 font-body leading-relaxed">
-                    {feature.description}
-                  </p>
-
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-teal-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-8 h-8 bg-teal-500/20 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                <div className="bg-white rounded-xl p-6 shadow-md border border-earth-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                  <div className="flex flex-col items-center text-center">
+                    <div className={`w-12 h-12 rounded-xl ${getColorClasses(feature.color)} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className="w-6 h-6" />
                     </div>
+                    <h3 className="text-lg font-semibold text-earth-900">
+                      {feature.title}
+                    </h3>
                   </div>
                 </div>
               </motion.div>

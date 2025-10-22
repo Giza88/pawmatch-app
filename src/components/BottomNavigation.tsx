@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Dog, Calendar, MessageCircle, Heart, Navigation, User, Heart as HeartIcon } from 'lucide-react'
+import { Dog, Calendar, MessageCircle, Heart, User, Heart as HeartIcon } from 'lucide-react'
 
 const BottomNavigation: React.FC = () => {
   const location = useLocation()
@@ -9,13 +9,13 @@ const BottomNavigation: React.FC = () => {
     {
       path: '/discover',
       icon: Dog,
-            label: 'Match',
+      label: 'Match',
       color: 'text-primary-600'
     },
     {
       path: '/matches',
       icon: HeartIcon,
-            label: 'Matches',
+      label: 'Matches',
       color: 'text-gray-600'
     },
     {
@@ -47,7 +47,7 @@ const BottomNavigation: React.FC = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-earth-200 shadow-lg z-50 pb-safe">
       <div className="max-w-md mx-auto px-1">
-        <div className="flex items-center justify-between py-2">
+        <div className="flex items-center justify-between py-3">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
@@ -57,12 +57,12 @@ const BottomNavigation: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center py-1 px-0.5 rounded-lg transition-colors duration-200 min-w-0 flex-1 ${
+                className={`flex flex-col items-center py-1 px-2 rounded-lg transition-colors duration-200 ${
                   isActive ? 'bg-teal-50' : 'hover:bg-earth-50'
                 }`}
               >
-                <Icon className={`w-4 h-4 mb-1 ${activeColor}`} />
-                <span className={`text-xs font-medium ${activeColor} font-body leading-tight truncate`}>
+                <Icon className={`w-5 h-5 mb-1 ${activeColor}`} />
+                <span className={`text-xs font-medium ${activeColor} font-body`}>
                   {item.label}
                 </span>
               </Link>
