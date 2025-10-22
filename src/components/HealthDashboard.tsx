@@ -73,71 +73,11 @@ const HealthDashboard: React.FC = () => {
   const [reminderDate, setReminderDate] = useState('');
   const [reminderTime, setReminderTime] = useState('');
 
-  // Mock health metrics - in a real app, these would come from a health tracking API
-  const healthMetrics: HealthMetric[] = [
-    {
-      id: '1',
-      name: 'Weight',
-      value: '65.2',
-      unit: 'lbs',
-      trend: 'stable',
-      lastUpdated: '2024-01-20',
-      icon: Scale
-    },
-    {
-      id: '2',
-      name: 'Heart Rate',
-      value: '85',
-      unit: 'bpm',
-      trend: 'stable',
-      lastUpdated: '2024-01-20',
-      icon: Heart
-    },
-    {
-      id: '3',
-      name: 'Temperature',
-      value: '101.2',
-      unit: '°F',
-      trend: 'stable',
-      lastUpdated: '2024-01-20',
-      icon: Thermometer
-    },
-    {
-      id: '4',
-      name: 'Activity Level',
-      value: 'High',
-      unit: '',
-      trend: 'up',
-      lastUpdated: '2024-01-20',
-      icon: Activity
-    }
-  ];
+  // Health metrics - show empty state for new users
+  const healthMetrics: HealthMetric[] = [];
 
-  // Mock health insights - in a real app, these would be AI-generated
-  const healthInsights: HealthInsight[] = [
-    {
-      id: '1',
-      type: 'warning',
-      title: 'Vaccination Due Soon',
-      description: 'Bordetella vaccination is due in 2 weeks. Schedule an appointment.',
-      action: 'Schedule Now',
-      icon: AlertTriangle
-    },
-    {
-      id: '2',
-      type: 'info',
-      title: 'Exercise Recommendation',
-      description: 'Your dog has been very active this week. Consider a rest day.',
-      icon: Activity
-    },
-    {
-      id: '3',
-      type: 'success',
-      title: 'Health Check Complete',
-      description: 'All recent health metrics are within normal ranges.',
-      icon: CheckCircle
-    }
-  ];
+  // Health insights - show empty state for new users
+  const healthInsights: HealthInsight[] = [];
 
   const upcomingVaccinations = getUpcomingVaccinations();
   const overdueVaccinations = getOverdueVaccinations();
@@ -201,6 +141,103 @@ const HealthDashboard: React.FC = () => {
         return 'border-gray-200 bg-gray-50 text-gray-800';
     }
   };
+
+  // Check if user has any health data
+  const hasHealthData = healthMetrics.length > 0 || healthInsights.length > 0 || 
+                       upcomingVaccinations.length > 0 || overdueVaccinations.length > 0 || 
+                       upcomingAppointments.length > 0 || activeMedications.length > 0;
+
+  // Show empty state for new users
+  if (!hasHealthData) {
+    return (
+      <div className="space-y-6">
+        {/* Welcome Message */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-teal-50 to-earth-50 rounded-2xl p-8 shadow-lg border border-earth-200 text-center"
+        >
+          <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Heart className="w-8 h-8 text-teal-600" />
+          </div>
+          <h3 className="text-2xl font-display font-bold text-earth-900 mb-2">
+            Welcome to Health & Wellness!
+          </h3>
+          <p className="text-earth-600 font-body mb-6 max-w-md mx-auto">
+            Start tracking your dog's health journey. Add vaccinations, medications, appointments, and health records to get personalized insights.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => {
+                // In a real app, this would open the vaccination form
+                alert('Opening vaccination form... This would help you add your first vaccination record.')
+              }}
+              className="bg-teal-500 text-white px-6 py-3 rounded-xl font-body font-medium hover:bg-teal-600 transition-colors"
+            >
+              Add First Vaccination
+            </button>
+            <button
+              onClick={() => {
+                // In a real app, this would open the appointment form
+                alert('Opening appointment scheduler... This would help you schedule your first vet appointment.')
+              }}
+              className="bg-white text-teal-600 px-6 py-3 rounded-xl font-body font-medium border border-teal-200 hover:bg-teal-50 transition-colors"
+            >
+              Schedule Appointment
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Quick Setup Guide */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-earth-200"
+        >
+          <h3 className="text-xl font-display font-bold text-earth-900 mb-4">Get Started</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-start gap-3 p-4 bg-earth-50 rounded-xl">
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-teal-600">1</span>
+              </div>
+              <div>
+                <h4 className="font-semibold text-earth-900 mb-1">Add Vaccinations</h4>
+                <p className="text-sm text-earth-600">Record your dog's vaccination history</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-earth-50 rounded-xl">
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-teal-600">2</span>
+              </div>
+              <div>
+                <h4 className="font-semibold text-earth-900 mb-1">Schedule Appointments</h4>
+                <p className="text-sm text-earth-600">Book upcoming vet visits</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-earth-50 rounded-xl">
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-teal-600">3</span>
+              </div>
+              <div>
+                <h4 className="font-semibold text-earth-900 mb-1">Track Medications</h4>
+                <p className="text-sm text-earth-600">Monitor ongoing treatments</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-earth-50 rounded-xl">
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-teal-600">4</span>
+              </div>
+              <div>
+                <h4 className="font-semibold text-earth-900 mb-1">Upload Records</h4>
+                <p className="text-sm text-earth-600">Store health documents safely</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

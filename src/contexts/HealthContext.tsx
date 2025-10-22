@@ -34,7 +34,7 @@ interface HealthProviderProps {
 }
 
 export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
-  // Load vaccinations from localStorage or use defaults
+  // Load vaccinations from localStorage or return empty array for new users
   const [vaccinations, setVaccinations] = useState<Vaccination[]>(() => {
     const saved = localStorage.getItem('healthVaccinations')
     if (saved) {
@@ -44,41 +44,11 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         console.error('Failed to parse vaccinations:', e)
       }
     }
-    return [
-    {
-      id: '1',
-      name: 'Rabies',
-      dateGiven: '2024-01-15',
-      nextDueDate: '2025-01-15',
-      isOverdue: false,
-      isUpcoming: false,
-      vet: 'Dr. Sarah Johnson',
-      notes: 'Annual booster'
-    },
-    {
-      id: '2',
-      name: 'DHPP (Distemper)',
-      dateGiven: '2024-01-15',
-      nextDueDate: '2025-01-15',
-      isOverdue: false,
-      isUpcoming: false,
-      vet: 'Dr. Sarah Johnson',
-      notes: 'Annual booster'
-    },
-    {
-      id: '3',
-      name: 'Bordetella',
-      dateGiven: '2024-01-15',
-      nextDueDate: '2024-07-15',
-      isOverdue: false,
-      isUpcoming: true,
-      vet: 'Dr. Sarah Johnson',
-      notes: '6-month booster'
-    }
-  ]
+    // Return empty array for new users - no default data
+    return []
   })
 
-  // Load medications from localStorage or use defaults
+  // Load medications from localStorage or return empty array for new users
   const [medications, setMedications] = useState<Medication[]>(() => {
     const saved = localStorage.getItem('healthMedications')
     if (saved) {
@@ -88,56 +58,11 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         console.error('Failed to parse medications:', e)
       }
     }
-    return [
-    {
-      id: '1',
-      name: 'Heartgard Plus',
-      dosage: '1 chewable',
-      frequency: 'Monthly',
-      startDate: '2024-01-01',
-      isActive: true,
-      notes: 'Heartworm prevention - currently active'
-    },
-    {
-      id: '2',
-      name: 'Frontline Plus',
-      dosage: '1 application',
-      frequency: 'Monthly',
-      startDate: '2024-01-01',
-      isActive: true,
-      notes: 'Flea and tick prevention - currently active'
-    },
-    {
-      id: '3',
-      name: 'Rimadyl',
-      dosage: '100mg tablet',
-      frequency: 'Twice daily',
-      startDate: '2024-01-10',
-      isActive: false,
-      notes: 'Pain medication for arthritis - completed 2-week course'
-    },
-    {
-      id: '4',
-      name: 'Amoxicillin',
-      dosage: '250mg capsule',
-      frequency: 'Twice daily',
-      startDate: '2024-01-05',
-      isActive: false,
-      notes: 'Antibiotic for skin infection - completed 10-day course'
-    },
-    {
-      id: '5',
-      name: 'Metronidazole',
-      dosage: '250mg tablet',
-      frequency: 'Twice daily',
-      startDate: '2024-01-20',
-      isActive: false,
-      notes: 'Antibiotic for digestive issues - completed 7-day course'
-    }
-  ]
+    // Return empty array for new users - no default data
+    return []
   })
 
-  // Load appointments from localStorage or use defaults
+  // Load appointments from localStorage or return empty array for new users
   const [appointments, setAppointments] = useState<VetAppointment[]>(() => {
     const saved = localStorage.getItem('healthAppointments')
     if (saved) {
@@ -147,33 +72,11 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         console.error('Failed to parse appointments:', e)
       }
     }
-    return [
-    {
-      id: '1',
-      type: 'Checkup',
-      date: '2024-02-15',
-      time: '10:00',
-      vet: 'Dr. Sarah Johnson',
-      location: 'Central Vet Clinic',
-      phone: '(555) 123-4567',
-      notes: 'Annual wellness exam',
-      isCompleted: false
-    },
-    {
-      id: '2',
-      type: 'Vaccination',
-      date: '2024-07-15',
-      time: '14:30',
-      vet: 'Dr. Sarah Johnson',
-      location: 'Central Vet Clinic',
-      phone: '(555) 123-4567',
-      notes: 'Bordetella booster',
-      isCompleted: false
-    }
-  ]
+    // Return empty array for new users - no default data
+    return []
   })
 
-  // Load health records from localStorage or use defaults
+  // Load health records from localStorage or return empty array for new users
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>(() => {
     const saved = localStorage.getItem('healthRecords')
     if (saved) {
@@ -183,24 +86,8 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         console.error('Failed to parse health records:', e)
       }
     }
-    return [
-    {
-      id: '1',
-      title: 'Rabies Certificate',
-      type: 'Vaccination',
-      date: '2024-01-15',
-      vet: 'Dr. Sarah Johnson',
-      notes: 'Annual rabies vaccination certificate'
-    },
-    {
-      id: '2',
-      title: 'Blood Test Results',
-      type: 'Test Results',
-      date: '2024-01-15',
-      vet: 'Dr. Sarah Johnson',
-      notes: 'Annual wellness blood work - all normal'
-    }
-  ]
+    // Return empty array for new users - no default data
+    return []
   })
 
   const addVaccination = (vaccinationData: Omit<Vaccination, 'id'>) => {
