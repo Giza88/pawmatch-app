@@ -142,13 +142,15 @@ const HealthDashboard: React.FC = () => {
     }
   };
 
-  // Check if user has any health data
+  // Check if user has any health data or if onboarding has been completed
   const hasHealthData = healthMetrics.length > 0 || healthInsights.length > 0 || 
                        upcomingVaccinations.length > 0 || overdueVaccinations.length > 0 || 
                        upcomingAppointments.length > 0 || activeMedications.length > 0;
+  
+  const onboardingCompleted = localStorage.getItem('healthOnboardingCompleted') === 'true';
 
-  // Show empty state for new users
-  if (!hasHealthData) {
+  // Show empty state for new users who haven't completed onboarding
+  if (!hasHealthData && !onboardingCompleted) {
     return (
       <div className="space-y-6">
         {/* Welcome Message */}
@@ -169,8 +171,8 @@ const HealthDashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => {
-                // In a real app, this would open the vaccination form
-                alert('Opening vaccination form... This would help you add your first vaccination record.')
+                // Open vaccination form - this will be handled by the parent component
+                window.dispatchEvent(new CustomEvent('openVaccinationForm'));
               }}
               className="bg-teal-500 text-white px-6 py-3 rounded-xl font-body font-medium hover:bg-teal-600 transition-colors"
             >
@@ -178,12 +180,21 @@ const HealthDashboard: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                // In a real app, this would open the appointment form
-                alert('Opening appointment scheduler... This would help you schedule your first vet appointment.')
+                // Open appointment form - this will be handled by the parent component
+                window.dispatchEvent(new CustomEvent('openAppointmentForm'));
               }}
               className="bg-white text-teal-600 px-6 py-3 rounded-xl font-body font-medium border border-teal-200 hover:bg-teal-50 transition-colors"
             >
               Schedule Appointment
+            </button>
+            <button
+              onClick={() => {
+                // Skip onboarding and go to dashboard
+                window.dispatchEvent(new CustomEvent('skipHealthOnboarding'));
+              }}
+              className="bg-gray-100 text-gray-600 px-6 py-3 rounded-xl font-body font-medium border border-gray-200 hover:bg-gray-200 transition-colors"
+            >
+              Skip for Now
             </button>
           </div>
         </motion.div>

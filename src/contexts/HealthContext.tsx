@@ -13,6 +13,10 @@ interface HealthContextType {
   updateVaccination: (id: string, updates: Partial<Vaccination>) => void
   updateMedication: (id: string, updates: Partial<Medication>) => void
   updateAppointment: (id: string, updates: Partial<VetAppointment>) => void
+  deleteVaccination: (id: string) => void
+  deleteMedication: (id: string) => void
+  deleteAppointment: (id: string) => void
+  deleteHealthRecord: (id: string) => void
   getUpcomingVaccinations: () => Vaccination[]
   getOverdueVaccinations: () => Vaccination[]
   getUpcomingAppointments: () => VetAppointment[]
@@ -168,6 +172,38 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
     })
   }
 
+  const deleteVaccination = (id: string) => {
+    setVaccinations(prev => {
+      const updated = prev.filter(vaccination => vaccination.id !== id)
+      localStorage.setItem('healthVaccinations', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const deleteMedication = (id: string) => {
+    setMedications(prev => {
+      const updated = prev.filter(medication => medication.id !== id)
+      localStorage.setItem('healthMedications', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const deleteAppointment = (id: string) => {
+    setAppointments(prev => {
+      const updated = prev.filter(appointment => appointment.id !== id)
+      localStorage.setItem('healthAppointments', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const deleteHealthRecord = (id: string) => {
+    setHealthRecords(prev => {
+      const updated = prev.filter(record => record.id !== id)
+      localStorage.setItem('healthRecords', JSON.stringify(updated))
+      return updated
+    })
+  }
+
   const getUpcomingVaccinations = () => {
     const now = new Date()
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -213,6 +249,10 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
     updateVaccination,
     updateMedication,
     updateAppointment,
+    deleteVaccination,
+    deleteMedication,
+    deleteAppointment,
+    deleteHealthRecord,
     getUpcomingVaccinations,
     getOverdueVaccinations,
     getUpcomingAppointments,

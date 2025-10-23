@@ -12,11 +12,12 @@ import {
 } from 'lucide-react';
 import { useHealth } from '../contexts/HealthContext';
 
-interface MedicationReminder {
+interface HealthReminder {
   id: string;
-  medicationId: string;
-  medicationName: string;
-  dosage: string;
+  type: 'medication' | 'vaccination' | 'appointment' | 'general';
+  itemId: string;
+  itemName: string;
+  description: string;
   time: string;
   isCompleted: boolean;
   date: string;
@@ -24,11 +25,13 @@ interface MedicationReminder {
 }
 
 const MedicationReminder: React.FC = () => {
-  const { medications, updateMedication } = useHealth();
-  const [reminders, setReminders] = useState<MedicationReminder[]>([]);
+  const { medications, vaccinations, appointments, updateMedication } = useHealth();
+  const [reminders, setReminders] = useState<HealthReminder[]>([]);
   const [showAddReminder, setShowAddReminder] = useState(false);
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
   const [newReminder, setNewReminder] = useState({
-    medicationId: '',
+    type: 'general' as 'medication' | 'vaccination' | 'appointment' | 'general',
+    itemId: '',
     time: '',
     notes: ''
   });
@@ -88,26 +91,80 @@ const MedicationReminder: React.FC = () => {
     );
   };
 
-  const addCustomReminder = () => {
-    if (!newReminder.medicationId || !newReminder.time) return;
+  const editReminder = (id: string) => {
+    const reminder = reminders.find(r => r.id === id);
+    if (reminder) {
+      setNewReminder({
+        type: reminder.type,
+        itemId: reminder.itemId,
+        time: reminder.time,
+        notes: reminder.notes || ''
+      });
+      setShowAddReminder(true);
+      // Store the ID of the reminder being edited
+      setEditingReminderId(id);
+    }
+  };
 
-    const medication = medications.find(med => med.id === newReminder.medicationId);
-    if (!medication) return;
+  const deleteReminder = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this reminder?')) {
+      setReminders(prev => prev.filter(reminder => reminder.id !== id));
+    }
+  };
+
+  const addCustomReminder = () => {
+    if (!newReminder.itemId || !newReminder.time) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const customReminder: MedicationReminder = {
+    let itemName = '';
+    let description = '';
+
+    if (newReminder.type === 'medication') {
+      const medication = medications.find(med => med.id === newReminder.itemId);
+      if (!medication) return;
+      itemName = medication.name;
+      description = `${medication.dosage} - ${medication.frequency}`;
+    } else if (newReminder.type === 'vaccination') {
+      const vaccination = vaccinations.find(vacc => vacc.id === newReminder.itemId);
+      if (!vaccination) return;
+      itemName = vaccination.name;
+      description = `Due: ${vaccination.nextDueDate}`;
+    } else if (newReminder.type === 'appointment') {
+      const appointment = appointments.find(apt => apt.id === newReminder.itemId);
+      if (!appointment) return;
+      itemName = `${appointment.type} - ${appointment.vet}`;
+      description = `${appointment.date} at ${appointment.time}`;
+    } else if (newReminder.type === 'general') {
+      itemName = newReminder.itemId;
+      description = 'Custom reminder';
+    }
+
+    const customReminder: HealthReminder = {
       id: `custom-${Date.now()}`,
-      medicationId: medication.id,
-      medicationName: medication.name,
-      dosage: medication.dosage,
+      type: newReminder.type,
+      itemId: newReminder.itemId,
+      itemName: itemName,
+      description: description,
       time: newReminder.time,
       isCompleted: false,
       date: today,
       notes: newReminder.notes
     };
 
-    setReminders(prev => [...prev, customReminder]);
-    setNewReminder({ medicationId: '', time: '', notes: '' });
+    if (editingReminderId) {
+      // Update existing reminder
+      setReminders(prev => 
+        prev.map(reminder => 
+          reminder.id === editingReminderId ? customReminder : reminder
+        )
+      );
+      setEditingReminderId(null);
+    } else {
+      // Add new reminder
+      setReminders(prev => [...prev, customReminder]);
+    }
+    
+    setNewReminder({ type: 'general', itemId: '', time: '', notes: '' });
     setShowAddReminder(false);
   };
 
@@ -223,11 +280,14 @@ const MedicationReminder: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                      <Pill className="w-5 h-5 text-teal-600" />
+                      {reminder.type === 'medication' && <Pill className="w-5 h-5 text-teal-600" />}
+                      {reminder.type === 'vaccination' && <Calendar className="w-5 h-5 text-teal-600" />}
+                      {reminder.type === 'appointment' && <Clock className="w-5 h-5 text-teal-600" />}
+                      {reminder.type === 'general' && <Bell className="w-5 h-5 text-teal-600" />}
                     </div>
                     <div>
-                      <h4 className="font-body font-semibold text-earth-900">{reminder.medicationName}</h4>
-                      <p className="text-sm text-earth-600 font-body">{reminder.dosage}</p>
+                      <h4 className="font-body font-semibold text-earth-900">{reminder.itemName}</h4>
+                      <p className="text-sm text-earth-600 font-body">{reminder.description}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {statusIcon}
                         <span className="text-sm font-body">{formatTime(reminder.time)}</span>
@@ -235,18 +295,38 @@ const MedicationReminder: React.FC = () => {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => markAsCompleted(reminder.id)}
-                    disabled={reminder.isCompleted}
-                    className={`p-2 rounded-full transition-all duration-300 ${
-                      reminder.isCompleted
-                        ? 'bg-green-500 text-white cursor-default'
-                        : 'bg-earth-200 hover:bg-teal-500 hover:text-white text-earth-600'
-                    }`}
-                    title={reminder.isCompleted ? 'Completed' : 'Mark as completed'}
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => markAsCompleted(reminder.id)}
+                      disabled={reminder.isCompleted}
+                      className={`p-2 rounded-full transition-all duration-300 ${
+                        reminder.isCompleted
+                          ? 'bg-green-500 text-white cursor-default'
+                          : 'bg-earth-200 hover:bg-teal-500 hover:text-white text-earth-600'
+                      }`}
+                      title={reminder.isCompleted ? 'Completed' : 'Mark as completed'}
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                    </button>
+                    
+                    <button
+                      onClick={() => editReminder(reminder.id)}
+                      className="p-2 rounded-full bg-blue-100 hover:bg-blue-500 hover:text-white text-blue-600 transition-all duration-300"
+                      title="Edit reminder"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    
+                    <button
+                      onClick={() => deleteReminder(reminder.id)}
+                      className="p-2 rounded-full bg-red-100 hover:bg-red-500 hover:text-white text-red-600 transition-all duration-300"
+                      title="Delete reminder"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 
                 {reminder.notes && (
@@ -278,9 +358,15 @@ const MedicationReminder: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-display font-bold text-earth-900">Add Custom Reminder</h3>
+                <h3 className="text-xl font-display font-bold text-earth-900">
+                  {editingReminderId ? 'Edit Reminder' : 'Add Custom Reminder'}
+                </h3>
                 <button
-                  onClick={() => setShowAddReminder(false)}
+                  onClick={() => {
+                    setShowAddReminder(false);
+                    setEditingReminderId(null);
+                    setNewReminder({ type: 'general', itemId: '', time: '', notes: '' });
+                  }}
                   className="p-2 rounded-full hover:bg-earth-100 transition-colors"
                 >
                   <X className="w-5 h-5 text-earth-600" />
@@ -290,19 +376,59 @@ const MedicationReminder: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-body font-medium text-earth-700 mb-2">
-                    Medication
+                    Reminder Type
                   </label>
                   <select
-                    value={newReminder.medicationId}
-                    onChange={(e) => setNewReminder(prev => ({ ...prev, medicationId: e.target.value }))}
+                    value={newReminder.type}
+                    onChange={(e) => setNewReminder(prev => ({ ...prev, type: e.target.value as any, itemId: '' }))}
                     className="w-full px-3 py-2 border border-earth-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white font-body"
                   >
-                    <option value="">Select medication</option>
-                    {medications.filter(med => med.isActive).map(med => (
-                      <option key={med.id} value={med.id}>{med.name}</option>
-                    ))}
+                    <option value="general">General Reminder</option>
+                    <option value="medication">Medication</option>
+                    <option value="vaccination">Vaccination</option>
+                    <option value="appointment">Appointment</option>
                   </select>
                 </div>
+
+                {newReminder.type !== 'general' && (
+                  <div>
+                    <label className="block text-sm font-body font-medium text-earth-700 mb-2">
+                      {newReminder.type === 'medication' ? 'Medication' : 
+                       newReminder.type === 'vaccination' ? 'Vaccination' : 'Appointment'}
+                    </label>
+                    <select
+                      value={newReminder.itemId}
+                      onChange={(e) => setNewReminder(prev => ({ ...prev, itemId: e.target.value }))}
+                      className="w-full px-3 py-2 border border-earth-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white font-body"
+                    >
+                      <option value="">Select {newReminder.type}</option>
+                      {newReminder.type === 'medication' && medications.filter(med => med.isActive).map(med => (
+                        <option key={med.id} value={med.id}>{med.name}</option>
+                      ))}
+                      {newReminder.type === 'vaccination' && vaccinations.map(vacc => (
+                        <option key={vacc.id} value={vacc.id}>{vacc.name}</option>
+                      ))}
+                      {newReminder.type === 'appointment' && appointments.filter(apt => !apt.isCompleted).map(apt => (
+                        <option key={apt.id} value={apt.id}>{apt.type} - {apt.vet}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {newReminder.type === 'general' && (
+                  <div>
+                    <label className="block text-sm font-body font-medium text-earth-700 mb-2">
+                      Reminder Title
+                    </label>
+                    <input
+                      type="text"
+                      value={newReminder.itemId}
+                      onChange={(e) => setNewReminder(prev => ({ ...prev, itemId: e.target.value }))}
+                      placeholder="e.g., Check weight, Grooming, Exercise"
+                      className="w-full px-3 py-2 border border-earth-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white font-body"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-body font-medium text-earth-700 mb-2">
@@ -331,7 +457,11 @@ const MedicationReminder: React.FC = () => {
 
                 <div className="flex gap-3 pt-4">
                   <button
-                    onClick={() => setShowAddReminder(false)}
+                    onClick={() => {
+                      setShowAddReminder(false);
+                      setEditingReminderId(null);
+                      setNewReminder({ type: 'general', itemId: '', time: '', notes: '' });
+                    }}
                     className="flex-1 px-4 py-2 border border-earth-200 text-earth-700 rounded-lg hover:bg-earth-50 transition-colors font-body"
                   >
                     Cancel
@@ -340,7 +470,7 @@ const MedicationReminder: React.FC = () => {
                     onClick={addCustomReminder}
                     className="flex-1 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors font-body font-semibold"
                   >
-                    Add Reminder
+                    {editingReminderId ? 'Update Reminder' : 'Add Reminder'}
                   </button>
                 </div>
               </div>

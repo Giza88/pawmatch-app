@@ -128,6 +128,38 @@ const HealthPage: React.FC = () => {
     }
   }, [isLoading, vaccinations, medications, appointments])
 
+  // Handle custom events from HealthDashboard
+  useEffect(() => {
+    const handleOpenVaccinationForm = () => {
+      setFormType('vaccination')
+      setShowAddForm(true)
+    }
+
+    const handleOpenAppointmentForm = () => {
+      setFormType('appointment')
+      setShowAddForm(true)
+    }
+
+    const handleSkipHealthOnboarding = () => {
+      // Mark onboarding as completed and show dashboard
+      localStorage.setItem('healthOnboardingCompleted', 'true')
+      // Force re-render to show dashboard
+      window.location.reload()
+    }
+
+    // Add event listeners
+    window.addEventListener('openVaccinationForm', handleOpenVaccinationForm)
+    window.addEventListener('openAppointmentForm', handleOpenAppointmentForm)
+    window.addEventListener('skipHealthOnboarding', handleSkipHealthOnboarding)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('openVaccinationForm', handleOpenVaccinationForm)
+      window.removeEventListener('openAppointmentForm', handleOpenAppointmentForm)
+      window.removeEventListener('skipHealthOnboarding', handleSkipHealthOnboarding)
+    }
+  }, [])
+
   if (isLoading) {
     return <LoadingScreen message="Loading health records..." />
   }
